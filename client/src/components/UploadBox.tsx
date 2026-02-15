@@ -81,7 +81,7 @@ const UploadBox = () => {
       const formData = new FormData();
       formData.append("image", selectedImage);
 
-      // 1️⃣ OCR
+      // 1️ OCR
       const ocrData = await parseImage(formData).unwrap();
       const extractedText = ocrData?.ParsedResults?.[0]?.ParsedText;
       if (!extractedText) {
@@ -89,15 +89,14 @@ const UploadBox = () => {
         return;
       }
 
-      // 2️⃣ ChatGPT
+      // 2️ ChatGPT
       const chatData = isSolvePage
         ? await chatGPTResponse({ text: extractedText }).unwrap()
         : await chatGPTProblems({ text: extractedText }).unwrap();
       const aiResponse = chatData?.content || "No response from AI.";
       setSolution(aiResponse);
 
-      // 3️⃣ Only upload if user is logged in
-      console.log("Auth loading:", authLoading, "AuthUser:", authUser);
+      // 3️ Only upload if user is logged in
 
       if (authUser) {
         const userId = authUser.userId;

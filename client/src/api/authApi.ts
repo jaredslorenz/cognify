@@ -13,7 +13,7 @@ export type User = {
 
 export const authApi = createApi({
   baseQuery: fetchBaseQuery({
-    baseUrl: "http://localhost:4000/api",
+    baseUrl: process.env.NEXT_PUBLIC_API_URL,
     prepareHeaders: async (headers) => {
       const session = await fetchAuthSession();
       const { idToken } = session.tokens ?? {};

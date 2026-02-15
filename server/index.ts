@@ -11,8 +11,9 @@ const app = express();
 
 app.use(
   cors({
-    origin: "http://localhost:3000", // or your frontend URL
-  })
+    origin: process.env.FRONTEND_URL || "http://localhost:3000",
+    credentials: true,
+  }),
 );
 
 app.use(express.json()); // if you want to parse JSON bodies on other routes

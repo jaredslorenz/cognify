@@ -2,7 +2,7 @@ import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
 export const chatgptApi = createApi({
   reducerPath: "chatgptApi",
-  baseQuery: fetchBaseQuery({ baseUrl: "http://localhost:4000/api" }),
+  baseQuery: fetchBaseQuery({ baseUrl: process.env.NEXT_PUBLIC_API_URL }),
   endpoints: (builder) => ({
     getChatGPTResponse: builder.mutation<{ content: string }, { text: string }>(
       {
@@ -11,7 +11,7 @@ export const chatgptApi = createApi({
           method: "POST",
           body,
         }),
-      }
+      },
     ),
     getChatGPTProblems: builder.mutation<{ content: string }, { text: string }>(
       {
@@ -20,7 +20,7 @@ export const chatgptApi = createApi({
           method: "POST",
           body,
         }),
-      }
+      },
     ),
   }),
 });

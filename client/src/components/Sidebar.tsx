@@ -62,7 +62,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
             <Link
               href="/settings"
               className="flex items-center gap-3 px-3 py-2 rounded-lg 
-                         hover:bg-gradient-to-r hover:from-[#de2160]/10 hover:to-[#8e21de]/10 
+                         hover:bg-gradient-to-r hover:from-[#727272]/10
                         transition"
             >
               <Settings size={18} className="text-gray-500" />

@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { Menu, Search, User } from "lucide-react";
 import Sidebar from "./Sidebar";
+import UserDropdown from "./UserDropdown";
 
 const Header: React.FC = () => {
   const [isSidebarOpen, setSidebarOpen] = useState(false);
@@ -39,9 +40,7 @@ const Header: React.FC = () => {
 
         {/* Right: User */}
         <div className="flex items-center gap-4">
-          <button className="p-2 rounded-full hover:bg-white/10 transition">
-            <User size={22} />
-          </button>
+          <UserDropdown />
         </div>
       </header>
 

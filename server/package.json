@@ -1,6 +1,8 @@
 {
   "scripts": {
-    "dev": "nodemon --watch './**/*.ts' --exec ts-node index.ts"
+    "dev": "nodemon --watch './**/*.ts' --exec ts-node index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.884.0",
