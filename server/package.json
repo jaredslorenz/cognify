@@ -6,6 +6,7 @@
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.884.0",
+    "@google-cloud/vision": "^5.3.4",
     "@reduxjs/toolkit": "^2.8.2",
     "aws-sdk": "^2.1692.0",
     "cors": "^2.8.5",

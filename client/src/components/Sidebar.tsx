@@ -14,58 +14,61 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
     <AnimatePresence>
       {isOpen && (
         <motion.aside
-          className="fixed top-20 left-0 h-[calc(100vh-5rem)] w-64 
-                     bg-white shadow-2xl z-40 rounded-tr-2xl rounded-br-2xl border-r border-gray-200"
+          className="fixed top-[68px] left-0 h-[calc(100vh-68px)] w-64
+                     bg-[#F4EFE4] z-40 border-r-[1.5px] border-[#1A1612] shadow-[4px_0_24px_rgba(26,22,18,0.08)]"
           initial={{ x: "-100%" }}
           animate={{ x: 0 }}
           exit={{ x: "-100%" }}
           transition={{ type: "spring", stiffness: 200, damping: 25 }}
         >
-          <nav className="flex flex-col gap-2 px-6 py-6 text-base font-medium text-gray-800">
+          <nav
+            className="flex flex-col gap-1 px-5 py-6"
+            style={{ fontFamily: "'DM Mono', monospace" }}
+          >
             {/* Section Title */}
-            <span className="text-xs uppercase tracking-widest text-gray-400 mb-3">
+            <span className="text-[10px] uppercase tracking-[0.22em] text-[#8A7D6A] mb-4 px-3">
               Menu
             </span>
 
             <Link
               href="/dashboard"
-              className="flex items-center gap-3 px-3 py-2 rounded-lg 
-                         hover:bg-gradient-to-r hover:from-[#de2160]/10
-                         hover:text-[#de2160] transition"
+              className="flex items-center gap-3 px-3 py-2.5 text-[12px] tracking-wide text-[#4A4035]
+                         hover:text-[#3D3580] hover:bg-[#EAE8F5] border-[1.5px] border-transparent
+                         hover:border-[#C5C0E8] transition-all"
             >
-              <LayoutDashboard size={18} className="text-gray-500" />
+              <LayoutDashboard size={16} className="text-[#8A7D6A]" />
               Dashboard
             </Link>
 
             <Link
               href="/solve"
-              className="flex items-center gap-3 px-3 py-2 rounded-lg 
-                         hover:bg-gradient-to-r hover:from-[#8e21de]/10 
-                         hover:text-[#8e21de] transition"
+              className="flex items-center gap-3 px-3 py-2.5 text-[12px] tracking-wide text-[#4A4035]
+                         hover:text-[#3D3580] hover:bg-[#EAE8F5] border-[1.5px] border-transparent
+                         hover:border-[#C5C0E8] transition-all"
             >
-              <Edit3 size={18} className="text-gray-500" />
+              <Edit3 size={16} className="text-[#8A7D6A]" />
               Solve
             </Link>
 
             <Link
               href="/practice"
-              className="flex items-center gap-3 px-3 py-2 rounded-lg 
-                         hover:bg-gradient-to-r hover:from-[#3e21de]/10 
-                         hover:text-[#3e21de] transition"
+              className="flex items-center gap-3 px-3 py-2.5 text-[12px] tracking-wide text-[#4A4035]
+                         hover:text-[#3D3580] hover:bg-[#EAE8F5] border-[1.5px] border-transparent
+                         hover:border-[#C5C0E8] transition-all"
             >
-              <BookOpen size={18} className="text-gray-500" />
+              <BookOpen size={16} className="text-[#8A7D6A]" />
               Practice
             </Link>
 
-            <div className="border-t border-gray-200 my-3"></div>
+            <div className="border-t-[1.5px] border-[#CEC4AE] my-3 mx-3" />
 
             <Link
               href="/settings"
-              className="flex items-center gap-3 px-3 py-2 rounded-lg 
-                         hover:bg-gradient-to-r hover:from-[#727272]/10
-                        transition"
+              className="flex items-center gap-3 px-3 py-2.5 text-[12px] tracking-wide text-[#4A4035]
+                         hover:text-[#3D3580] hover:bg-[#EAE8F5] border-[1.5px] border-transparent
+                         hover:border-[#C5C0E8] transition-all"
             >
-              <Settings size={18} className="text-gray-500" />
+              <Settings size={16} className="text-[#8A7D6A]" />
               Settings
             </Link>
           </nav>

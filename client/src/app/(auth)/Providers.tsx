@@ -19,11 +19,6 @@ Amplify.configure({
 });
 
 const Providers = ({ children }: { children: React.ReactNode }) => {
-  console.log("Env vars:", {
-    clientId: process.env.NEXT_PUBLIC_AWS_COGNITO_USER_POOL_CLIENT_ID,
-    poolId: process.env.NEXT_PUBLIC_AWS_COGNITO_USER_POOL_ID,
-  });
-
   return (
     <Authenticator.Provider>
       <Provider store={store}>

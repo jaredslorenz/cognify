@@ -10,9 +10,9 @@ import Footer from "@/components/Footer";
 const Landing = () => {
   return (
     <Provider store={store}>
-      <div className="min-h-screen flex flex-col bg-white">
+      <div className="min-h-screen flex flex-col bg-[#F4EFE4]">
         <Header />
-        <main className="flex-grow flex flex-col items-center w-full">
+        <main className="flex-grow flex flex-col w-full">
           <HeroSection />
         </main>
         <Footer />

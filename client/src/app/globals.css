@@ -1,9 +1,35 @@
 @import "tailwindcss";
+@import url("https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,600;1,9..144,300;1,9..144,600&family=DM+Mono:wght@300;400;500&display=swap");
 
 /* ===== Root variables ===== */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f4efe4;
+  --foreground: #1a1612;
+
+  /* Parchment scale */
+  --clr-parchment-50: #fdfaf4;
+  --clr-parchment-100: #f4efe4;
+  --clr-parchment-200: #ede5d4;
+  --clr-parchment-300: #ddd3be;
+  --clr-parchment-400: #cec4ae;
+
+  /* Ink scale */
+  --clr-ink-900: #1a1612;
+  --clr-ink-700: #4a4035;
+  --clr-ink-500: #8a7d6a;
+  --clr-ink-200: #2a2520;
+
+  /* Indigo accent scale */
+  --clr-indigo-900: #2a2560;
+  --clr-indigo-700: #3d3580;
+  --clr-indigo-500: #5548b0;
+  --clr-indigo-200: #c5c0e8;
+  --clr-indigo-100: #eae8f5;
+  --clr-indigo-50: #f4f3fc;
+
+  /* Fonts */
+  --font-display: "Fraunces", Georgia, serif;
+  --font-mono: "DM Mono", "Courier New", monospace;
 }
 
 @theme inline {
@@ -13,14 +39,25 @@
   --font-mono: var(--font-geist-mono);
 }
 
-/* Apply box-sizing globally to avoid overflow */
+/* ===== Box sizing ===== */
 *,
 *::before,
 *::after {
   box-sizing: border-box;
 }
 
-/* ===== Gradient animation ===== */
+/* ===== Base body ===== */
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-mono), "DM Mono", monospace;
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ===== Gradient animation (kept for any remaining uses) ===== */
 @keyframes gradient-wave {
   0% {
     background-position: 0% 50%;
@@ -36,13 +73,25 @@
   animation: gradient-wave 3s linear infinite;
 }
 
-/* ===== Base body ===== */
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
-  margin: 0;
-  padding: 0;
+/* Amplify Authenticator overrides */
+[data-amplify-authenticator] {
+  --amplify-colors-brand-primary-60: #3d3580;
+  --amplify-colors-brand-primary-80: #3d3580;
+  --amplify-colors-brand-primary-100: #1a1612;
+  --amplify-colors-background-primary: #f4efe4;
+  --amplify-colors-background-secondary: #fefaf2;
+  --amplify-colors-border-primary: #1a1612;
+  --amplify-colors-border-secondary: #cec4ae;
+  --amplify-radii-small: 0;
+  --amplify-radii-medium: 0;
+  --amplify-radii-large: 0;
+  --amplify-fonts-default-static: "DM Mono", monospace;
+}
+
+[data-amplify-authenticator] [data-amplify-form] {
+  background: #f4efe4;
+  box-shadow: 5px 5px 0 #1a1612;
+  border: 1.5px solid #1a1612;
 }
 
 /* ===== Hide default Amplify tabs ===== */
@@ -64,11 +113,11 @@ body {
 .amplify-authenticator > div {
   width: 100% !important;
   max-width: 100% !important;
-  border-radius: 1rem !important; /* Round the corners */
-  box-shadow: 0 8px 24px rgba(255, 255, 255, 0) !important; /* Add a soft shadow */
-  border: none !important; /* Remove the border completely */
-  padding: 2rem !important; /* Add padding inside the container */
-  overflow: hidden !important; /* Prevent any overflow */
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  border: none !important;
+  padding: 2rem !important;
+  overflow: hidden !important;
 }
 
 /* ===== Inputs ===== */
@@ -78,52 +127,66 @@ body {
   padding: 0.75rem 1rem !important;
   margin-right: 0 !important;
   box-sizing: border-box !important;
+  border-radius: 0 !important;
+  background: var(--clr-parchment-50) !important;
+  border: 1.5px solid var(--clr-ink-900) !important;
+  font-family: var(--font-mono) !important;
+  color: var(--clr-ink-900) !important;
 }
 
 /* ===== Password field toggle button ===== */
 .amplify-passwordfield__button {
   background: transparent !important;
-  border-left: 1px solid #e5e7eb !important;
+  border-left: 1.5px solid var(--clr-parchment-400) !important;
   padding: 0 0.75rem !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  color: #171717 !important;
+  color: var(--clr-ink-500) !important;
   transition: all 0.1s ease-in-out !important;
   cursor: pointer !important;
-  border-radius: 0 0.75rem 0.75rem 0 !important;
+  border-radius: 0 !important;
   height: 100% !important;
   flex-shrink: 0 !important;
   width: auto !important;
 }
 
 .amplify-passwordfield__button:hover {
-  background: rgba(212, 212, 212, 0.08) !important;
-  color: #b4b4b4 !important;
+  background: var(--clr-parchment-200) !important;
+  color: var(--clr-ink-900) !important;
 }
 
 .amplify-passwordfield__button:focus {
   outline: none !important;
-  box-shadow: 0 0 0 2px rgba(215, 215, 215, 0.3) !important;
+  box-shadow: none !important;
 }
 
 /* ===== Primary button ===== */
 .amplify-button--primary {
-  background: linear-gradient(to right, #de2160, #8e21de, #3e21de) !important;
-  color: #fff !important;
-  font-weight: 700 !important;
-  border-radius: 1rem !important;
+  background: var(--clr-ink-900) !important;
+  color: var(--clr-parchment-100) !important;
+  font-family: var(--font-mono) !important;
+  font-size: 11px !important;
+  font-weight: 400 !important;
+  letter-spacing: 0.14em !important;
+  text-transform: uppercase !important;
+  border-radius: 0 !important;
   width: 100% !important;
   padding: 0.75rem 1rem !important;
   margin-top: 1rem !important;
   text-align: center !important;
-  transition: all 0.3s ease-in-out !important;
-  box-shadow: #171717 !important;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease !important;
+  box-shadow: none !important;
+  border: 1.5px solid var(--clr-ink-900) !important;
 }
 
 .amplify-button--primary:hover {
-  filter: brightness(1.1) !important;
-  transform: translateY(-2px);
+  background: var(--clr-indigo-700) !important;
+  border-color: var(--clr-indigo-700) !important;
+  filter: none !important;
+  transform: none !important;
 }
 
 /* ===== Focus states ===== */
@@ -132,7 +195,6 @@ body {
 .amplify-button:focus,
 .amplify-passwordfield__button:focus {
   outline: none !important;
-  border: 1.5px solid #171717 !important;
-  box-shadow: 0 0 0 0px rgba(0, 0, 0, 0) !important;
-  border-color: #171717 !important;
+  border-color: var(--clr-indigo-700) !important;
+  box-shadow: none !important;
 }

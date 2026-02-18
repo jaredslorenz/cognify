@@ -125,8 +125,8 @@ const Auth = ({ children }: { children?: React.ReactNode }) => {
   return (
     <>
       {isAuthPage ? (
-        <div className="min-h-screen bg-white flex justify-center items-center px-4 py-8">
-          <div className="bg-white rounded-2xl shadow-xl py-12 w-full max-w-xl">
+        <div className="min-h-screen bg-[#F4EFE4] flex justify-center items-center px-4 py-8">
+          <div className="w-full max-w-xl">
             <Authenticator
               initialState={pathname.includes("signup") ? "signUp" : "signIn"}
               components={components}

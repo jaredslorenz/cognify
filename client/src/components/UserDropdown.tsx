@@ -2,14 +2,17 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useGetAuthUserQuery } from "@/api/authApi";
 import { LogOut } from "lucide-react";
 import { signOut } from "aws-amplify/auth";
+import Link from "next/link";
 
 const UserDropdown: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Close on outside click
+  const { data: user, isLoading } = useGetAuthUserQuery();
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -32,11 +35,36 @@ const UserDropdown: React.FC = () => {
     }
   };
 
+  if (isLoading) return null;
+
+  if (!user) {
+    return (
+      <div className="flex items-center gap-0">
+        <Link href="/signin">
+          <button
+            className="px-4 py-2 text-[11px] tracking-[0.14em] uppercase text-[#4A4035] border-[1.5px] border-transparent hover:border-[#CEC4AE] hover:bg-[#EDE5D4] transition-all cursor-pointer"
+            style={{ fontFamily: "'DM Mono', monospace" }}
+          >
+            Sign In
+          </button>
+        </Link>
+        <Link href="/signup">
+          <button
+            className="px-4 py-2 text-[11px] tracking-[0.14em] uppercase bg-[#1A1612] text-[#F4EFE4] border-[1.5px] border-[#1A1612] hover:bg-[#3D3580] hover:border-[#3D3580] transition-all cursor-pointer"
+            style={{ fontFamily: "'DM Mono', monospace" }}
+          >
+            Sign Up
+          </button>
+        </Link>
+      </div>
+    );
+  }
+
   return (
     <div className="relative" ref={dropdownRef}>
-      {/* Button */}
+      {/* Trigger button */}
       <button
-        className="p-2 rounded-full hover:bg-white/10 transition"
+        className="p-2 border-[1.5px] border-transparent hover:border-[#CEC4AE] hover:bg-[#EDE5D4] transition-all cursor-pointer"
         onClick={() => setIsOpen((prev) => !prev)}
       >
         <motion.div
@@ -45,14 +73,14 @@ const UserDropdown: React.FC = () => {
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
-            width="22"
-            height="22"
+            width="20"
+            height="20"
             fill="none"
             stroke="currentColor"
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
-            className="text-white"
+            className="text-[#1A1612]"
           >
             <circle cx="12" cy="7" r="4" />
             <path d="M5.5 21a7 7 0 0 1 13 0" />
@@ -60,29 +88,33 @@ const UserDropdown: React.FC = () => {
         </motion.div>
       </button>
 
-      {/* Dropdown sliding from header */}
+      {/* Dropdown */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            initial={{ y: -20, opacity: 0 }}
+            initial={{ y: -12, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            exit={{ y: -20, opacity: 0 }}
+            exit={{ y: -12, opacity: 0 }}
             transition={{ type: "spring", stiffness: 200, damping: 25 }}
-            className="fixed top-20 right-0 w-72 
-                       bg-white shadow-2xl rounded-bl-2xl border-l border-b border-gray-200 z-10"
+            className="fixed top-[68px] right-0 w-64
+                       bg-[#F4EFE4] border-l-[1.5px] border-b-[1.5px] border-[#1A1612]
+                       shadow-[-4px_4px_0_#1A1612] z-10"
           >
-            <nav className="flex flex-col gap-2 px-6 py-6 text-base font-medium text-gray-800">
-              <span className="text-xs uppercase tracking-widest text-gray-400 mb-3">
+            <nav
+              className="flex flex-col gap-1 px-5 py-5"
+              style={{ fontFamily: "'DM Mono', monospace" }}
+            >
+              <span className="text-[10px] uppercase tracking-[0.22em] text-[#8A7D6A] mb-3 px-2">
                 Account
               </span>
 
               <button
                 onClick={handleLogout}
-                className="flex items-center gap-3 px-3 py-2 rounded-lg 
-                         hover:bg-gradient-to-r hover:from-[#727272]/10
-                        transition cursor-pointer"
+                className="flex items-center gap-3 px-3 py-2.5 text-[12px] tracking-wide text-[#4A4035]
+                           hover:text-[#3D3580] hover:bg-[#EAE8F5] border-[1.5px] border-transparent
+                           hover:border-[#C5C0E8] transition-all cursor-pointer w-full text-left"
               >
-                <LogOut size={18} className="text-gray-500" />
+                <LogOut size={15} className="text-[#8A7D6A]" />
                 Logout
               </button>
             </nav>

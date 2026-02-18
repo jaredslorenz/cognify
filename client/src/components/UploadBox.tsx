@@ -6,20 +6,230 @@ import {
   useGetChatGPTProblemsMutation,
   useGetChatGPTResponseMutation,
 } from "@/api/chatgptApi";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { usePathname } from "next/navigation";
-
 import {
   useUploadAndStoreMutation,
   useUploadToS3Mutation,
 } from "@/api/uploadsApi";
-
 import { useGetAuthUserQuery } from "@/api/authApi";
 
-const UploadBox = () => {
+interface PracticeResponse {
+  question: string;
+  hints: string[];
+  answer: string;
+  fullSolution?: string;
+}
+
+interface UploadBoxProps {
+  subject?: string;
+  topic?: string;
+  difficulty?: "easy" | "medium" | "hard";
+  amount?: number;
+}
+
+// ── PROBLEM CARD ─────────────────────────────────────────────
+// Extracted so each card has its own independent hint/reveal state
+const ProblemCard = ({
+  problem,
+  index,
+  total,
+  isSolvePage,
+}: {
+  problem: PracticeResponse;
+  index: number;
+  total: number;
+  isSolvePage: boolean;
+}) => {
+  const [hintStep, setHintStep] = useState(0);
+  const [revealed, setRevealed] = useState(false);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.25, delay: index * 0.1 }}
+      className="w-full border-[1.5px] border-[#1A1612] bg-[#FEFAF2]"
+      style={{ boxShadow: "5px 5px 0 #1A1612" }}
+    >
+      {/* header */}
+      <div className="border-b-[1.5px] border-[#1A1612] px-6 py-3 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <span className="block w-5 h-[1.5px] bg-[#3D3580]" />
+          <span
+            className="text-[10px] tracking-[0.2em] uppercase text-[#3D3580]"
+            style={{ fontFamily: "'DM Mono', monospace" }}
+          >
+            {isSolvePage ? "Solution" : "Practice Problem"}
+            {total > 1 ? ` · ${index + 1} of ${total}` : ""}
+          </span>
+        </div>
+        {total > 1 && (
+          <span
+            className="text-[10px] text-[#8A7D6A]"
+            style={{ fontFamily: "'DM Mono', monospace" }}
+          >
+            {String(index + 1).padStart(2, "0")} /{" "}
+            {String(total).padStart(2, "0")}
+          </span>
+        )}
+      </div>
+
+      <div className="p-6 flex flex-col gap-4">
+        {/* question */}
+        <p
+          className="font-light leading-relaxed text-[#1A1612]"
+          style={{ fontFamily: "'Fraunces', serif", fontSize: "16px" }}
+        >
+          {problem.question}
+        </p>
+
+        {/* hints */}
+        {problem.hints.length > 0 && (
+          <div className="flex flex-col gap-2">
+            <AnimatePresence>
+              {problem.hints.slice(0, hintStep).map((hint, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  transition={{ duration: 0.2 }}
+                  className="text-[12px] leading-loose overflow-hidden"
+                  style={{
+                    background: "#F4F3FC",
+                    border: "1px solid #C5C0E8",
+                    color: "#3D3580",
+                    padding: "10px 16px",
+                    fontFamily: "'DM Mono', monospace",
+                  }}
+                >
+                  <span className="text-[10px] tracking-[0.1em] uppercase mr-2 opacity-50">
+                    hint {i + 1}
+                  </span>
+                  {hint}
+                </motion.div>
+              ))}
+            </AnimatePresence>
+
+            {/* answer */}
+            <AnimatePresence>
+              {revealed && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  transition={{ duration: 0.25 }}
+                  className="text-[12px] leading-loose overflow-hidden"
+                  style={{
+                    background: "#EAE8F5",
+                    border: "1.5px solid #3D3580",
+                    color: "#3D3580",
+                    padding: "10px 16px",
+                    fontFamily: "'DM Mono', monospace",
+                  }}
+                >
+                  <span className="text-[10px] tracking-[0.1em] uppercase mr-2 opacity-50">
+                    answer
+                  </span>
+                  <strong>{problem.answer}</strong>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* full walkthrough — solve page only */}
+            <AnimatePresence>
+              {revealed && problem.fullSolution && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  transition={{ duration: 0.25, delay: 0.1 }}
+                  className="text-[12px] leading-loose overflow-hidden whitespace-pre-wrap"
+                  style={{
+                    background: "#F4EFE4",
+                    border: "1.5px solid #CEC4AE",
+                    color: "#4A4035",
+                    padding: "14px 16px",
+                    fontFamily: "'DM Mono', monospace",
+                  }}
+                >
+                  <span className="text-[10px] tracking-[0.1em] uppercase mr-2 opacity-50 block mb-2">
+                    full walkthrough
+                  </span>
+                  {problem.fullSolution}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        )}
+
+        {/* controls */}
+        <div className="flex items-center justify-between mt-1">
+          {!revealed ? (
+            <button
+              onClick={() => {
+                if (hintStep < (problem.hints?.length ?? 0)) {
+                  setHintStep((h) => h + 1);
+                } else {
+                  setRevealed(true);
+                }
+              }}
+              className="text-[10px] tracking-[0.12em] uppercase text-[#3D3580] border-b border-[#C5C0E8] cursor-pointer hover:border-[#3D3580] transition-colors"
+              style={{ fontFamily: "'DM Mono', monospace" }}
+            >
+              {hintStep === 0
+                ? "Show first hint →"
+                : hintStep < (problem.hints?.length ?? 0)
+                  ? `Next hint (${hintStep}/${problem.hints.length}) →`
+                  : "Reveal answer →"}
+            </button>
+          ) : (
+            <button
+              onClick={() => {
+                setHintStep(0);
+                setRevealed(false);
+              }}
+              className="text-[10px] tracking-[0.12em] uppercase text-[#8A7D6A] border-b border-[#CEC4AE] cursor-pointer hover:text-[#3D3580] hover:border-[#3D3580] transition-colors"
+              style={{ fontFamily: "'DM Mono', monospace" }}
+            >
+              ↺ Try again
+            </button>
+          )}
+
+          {/* progress dots */}
+          <div className="flex gap-1.5">
+            {(problem.hints ?? []).map((_, i) => (
+              <div
+                key={i}
+                className="w-2 h-2 rounded-full border-[1.5px] transition-all duration-200"
+                style={{
+                  background: i < hintStep ? "#3D3580" : "transparent",
+                  borderColor: "#3D3580",
+                }}
+              />
+            ))}
+            <div
+              className="w-2 h-2 rounded-full border-[1.5px] transition-all duration-200"
+              style={{
+                background: revealed ? "#5548B0" : "transparent",
+                borderColor: "#5548B0",
+              }}
+            />
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  );
+};
+
+// ── UPLOAD BOX ────────────────────────────────────────────────
+const UploadBox = ({
+  subject,
+  topic,
+  difficulty = "medium",
+  amount = 1,
+}: UploadBoxProps) => {
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [solution, setSolution] = useState<string | null>(null);
+  const [problems, setProblems] = useState<PracticeResponse[]>([]);
 
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -33,23 +243,24 @@ const UploadBox = () => {
     useGetChatGPTProblemsMutation(),
   ];
 
-  //Page check
   const pathname = usePathname();
-  const isSolvePage = pathname.match(/^\/(solve)$/);
-  const isPracticePage = pathname.match(/^\/(practice)$/);
+  const isSolvePage = !!pathname.match(/^\/(solve)$/);
+  const isPracticePage = !!pathname.match(/^\/(practice)$/);
 
-  //Grab auth user
   const { data: authUser, isLoading: authLoading } = useGetAuthUserQuery();
-
   const [uploadAndStore] = useUploadAndStoreMutation();
   const [uploadToS3] = useUploadToS3Mutation();
+
+  const resetState = () => {
+    setProblems([]);
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file && file.type.startsWith("image/")) {
       setSelectedImage(file);
       setPreviewUrl(URL.createObjectURL(file));
-      setSolution(null);
+      resetState();
     }
   };
 
@@ -60,7 +271,7 @@ const UploadBox = () => {
     if (file && file.type.startsWith("image/")) {
       setSelectedImage(file);
       setPreviewUrl(URL.createObjectURL(file));
-      setSolution(null);
+      resetState();
     }
   };
 
@@ -69,60 +280,97 @@ const UploadBox = () => {
     e.stopPropagation();
   };
 
-  const handleClick = () => {
-    inputRef.current?.click();
-  };
+  const handleClick = () => inputRef.current?.click();
 
   const handleSolve = async () => {
     if (!selectedImage) return;
-    setSolution(null);
+    resetState();
 
     try {
       const formData = new FormData();
       formData.append("image", selectedImage);
 
-      // 1️ OCR
+      // 1. OCR
       const ocrData = await parseImage(formData).unwrap();
       const extractedText = ocrData?.ParsedResults?.[0]?.ParsedText;
       if (!extractedText) {
-        setSolution("No text found in image. Try a clearer image.");
+        setProblems([
+          {
+            question: "No text found in image. Try a clearer image.",
+            hints: [],
+            answer: "",
+          },
+        ]);
         return;
       }
 
-      // 2️ ChatGPT
-      const chatData = isSolvePage
-        ? await chatGPTResponse({ text: extractedText }).unwrap()
-        : await chatGPTProblems({ text: extractedText }).unwrap();
-      const aiResponse = chatData?.content || "No response from AI.";
-      setSolution(aiResponse);
+      // 2. ChatGPT
+      if (isSolvePage) {
+        // /solve returns a single PracticeResponse directly
+        const chatData = await chatGPTResponse({
+          text: extractedText,
+        }).unwrap();
+        setProblems([
+          {
+            question: chatData?.question ?? "No question returned.",
+            hints: chatData?.hints ?? [],
+            answer: chatData?.answer ?? "",
+            fullSolution: chatData?.fullSolution,
+          },
+        ]);
+      } else {
+        // /problems returns { problems: [...] } — unwrap the array here
+        const chatData = await chatGPTProblems({
+          text: extractedText,
+          subject: subject ?? undefined,
+          topic: topic ?? undefined,
+          difficulty,
+          amount, // ← passed through
+        }).unwrap();
 
-      // 3️ Only upload if user is logged in
+        const parsed: PracticeResponse[] = (chatData?.problems ?? []).map(
+          (p: any) => ({
+            question: p?.question ?? "No question returned.",
+            hints: p?.hints ?? [],
+            answer: p?.answer ?? "",
+          }),
+        );
 
+        setProblems(
+          parsed.length > 0
+            ? parsed
+            : [
+                {
+                  question: "No problems returned. Try again.",
+                  hints: [],
+                  answer: "",
+                },
+              ],
+        );
+      }
+
+      // 3. Upload if logged in
       if (authUser) {
         const userId = authUser.userId;
-
-        console.log("Uploading image to S3 for user:", authUser.userId);
-
-        //const s3Data = await uploadToS3(formData).unwrap();
-        //const imageUrl = s3Data.url;
-
         const file_name = selectedImage?.name;
         const file_url = "exampleurl";
-
-        console.log("Storing image and AI response in DB...");
+        const aiResponse = problems[0]?.answer ?? "";
         await uploadAndStore({
           userId,
           file_name,
           file_url,
           aiResponse,
         }).unwrap();
-        console.log("Upload and storage successful");
-      } else {
-        console.log("User not logged in — skipping S3 and DB upload");
       }
     } catch (error) {
       console.error("Error processing image or AI request:", error);
-      setSolution("Error processing image or AI request.");
+      setProblems([
+        {
+          question: "Error processing image or AI request.",
+          hints: [],
+          answer: "",
+        },
+      ]);
     }
   };
 
@@ -130,21 +378,34 @@ const UploadBox = () => {
     e.stopPropagation();
     setSelectedImage(null);
     setPreviewUrl(null);
-    setSolution(null);
+    resetState();
     if (inputRef.current) inputRef.current.value = "";
   };
+
+  const isLoading = ocrLoading || chatLoading || chatProblemsLoading;
 
   return (
     <motion.div
       whileHover={!previewUrl ? { scale: 1.02 } : undefined}
-      className="mt-12 w-full p-6 max-w-4xl bg-white rounded-2xl shadow-xl text-center"
+      className="mt-12 w-full max-w-4xl border-[1.5px] border-[#1A1612] bg-[#FEFAF2]"
+      style={{ boxShadow: "5px 5px 0 #1A1612" }}
       onDrop={!previewUrl ? handleDrop : undefined}
       onDragOver={!previewUrl ? handleDragOver : undefined}
     >
       {!previewUrl ? (
-        <div className="cursor-pointer" onClick={handleClick}>
-          <p className="text-black opacity-60 text-lg">
-            Drag & drop an image here, or click to upload
+        /* ── DROP ZONE ── */
+        <div
+          className="cursor-pointer flex flex-col items-center justify-center gap-3 border-[1.5px] border-dashed border-[#CEC4AE] m-6 py-14 hover:border-[#3D3580] hover:bg-[#F4F3FC] transition-all"
+          onClick={handleClick}
+        >
+          <span
+            className="text-[32px] leading-none"
+            style={{ fontFamily: "'Fraunces', serif", color: "#CEC4AE" }}
+          >
+            ↑
+          </span>
+          <p className="text-[12px] tracking-[0.1em] uppercase text-[#8A7D6A]">
+            Drag & drop an image, or click to upload
           </p>
           <input
             type="file"
@@ -155,48 +416,79 @@ const UploadBox = () => {
           />
         </div>
       ) : (
-        <div className="flex flex-col items-center space-y-4">
+        <div className="flex flex-col items-center p-8 gap-6">
+          {/* Preview */}
           <img
             src={previewUrl}
             alt="Preview"
-            className="max-w-xs max-h-64 object-contain rounded-lg"
+            className="max-w-xs max-h-64 object-contain border-[1.5px] border-[#CEC4AE]"
           />
-          <p className="text-black opacity-70">{selectedImage?.name}</p>
+          <p className="text-[11px] tracking-[0.08em] uppercase text-[#8A7D6A]">
+            {selectedImage?.name}
+          </p>
 
-          <div className="flex gap-4 mt-4 w-full justify-center">
+          {/* Action buttons */}
+          <div className="flex w-full max-w-md">
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 handleSolve();
               }}
-              disabled={
-                ocrLoading || chatLoading || chatProblemsLoading || authLoading
-              }
-              className="flex-1 px-4 py-2 rounded-xl text-white bg-gradient-to-r from-[#de2160] via-[#8e21de] to-[#3e21de] shadow-lg hover:opacity-50 transition disabled:opacity-50 cursor-pointer"
+              disabled={isLoading || authLoading}
+              className="flex-1 py-4 text-[11px] tracking-[0.14em] uppercase text-[#F4EFE4] bg-[#1A1612] border-[1.5px] border-[#1A1612] hover:bg-[#3D3580] hover:border-[#3D3580] transition-colors disabled:opacity-40 cursor-pointer"
+              style={{ fontFamily: "'DM Mono', monospace" }}
             >
-              {ocrLoading || chatLoading || chatProblemsLoading
+              {isLoading
                 ? isPracticePage
                   ? "Generating..."
                   : "Solving..."
                 : isPracticePage
-                ? "Generate Practice"
-                : "Solve"}
+                  ? `Generate ${amount > 1 ? `${amount} Problems` : "Problem"}`
+                  : "Solve"}
             </button>
-
             <button
               onClick={handleRemove}
-              className="flex-1 px-4 py-2 rounded-xl text-white bg-red-500 hover:bg-red-400 shadow-lg transition cursor-pointer"
+              className="flex-1 py-4 text-[11px] tracking-[0.14em] uppercase text-[#4A4035] border-[1.5px] border-[#1A1612] border-l-0 hover:bg-[#F4F3FC] hover:text-[#3D3580] transition-colors cursor-pointer"
+              style={{ fontFamily: "'DM Mono', monospace" }}
             >
               Remove
             </button>
           </div>
 
-          {solution && (
-            <div className="w-full bg-white/80 dark:bg-zinc-100 p-4 rounded-lg mt-4 text-left text-black whitespace-pre-wrap shadow-inner">
-              <h4 className="font-semibold mb-1">Response:</h4>
-              <p>{solution}</p>
-            </div>
-          )}
+          {/* ── PROBLEM CARDS ── */}
+          <AnimatePresence>
+            {problems.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="w-full flex flex-col gap-6"
+              >
+                {/* summary row when multiple */}
+                {problems.length > 1 && (
+                  <div className="flex items-center gap-3">
+                    <span className="block w-5 h-[1.5px] bg-[#3D3580]" />
+                    <span
+                      className="text-[10px] tracking-[0.2em] uppercase text-[#3D3580]"
+                      style={{ fontFamily: "'DM Mono', monospace" }}
+                    >
+                      {problems.length} problems generated
+                    </span>
+                  </div>
+                )}
+
+                {problems.map((problem, i) => (
+                  <ProblemCard
+                    key={i}
+                    problem={problem}
+                    index={i}
+                    total={problems.length}
+                    isSolvePage={isSolvePage}
+                  />
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       )}
     </motion.div>
