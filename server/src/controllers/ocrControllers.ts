@@ -41,9 +41,13 @@ export const handleSPACEOCR = async (req: Request, res: Response) => {
   }
 };
 
-const credentials = JSON.parse(process.env.GOOGLE_VISION_KEY as string);
+if (!process.env.GOOGLE_VISION_KEY) {
+  throw new Error("GOOGLE_VISION_KEY not set");
+}
 
-// Fix newline formatting in private key
+const credentials = JSON.parse(process.env.GOOGLE_VISION_KEY);
+
+// VERY IMPORTANT
 credentials.private_key = credentials.private_key.replace(/\\n/g, "\n");
 
 const client = new vision.ImageAnnotatorClient({
