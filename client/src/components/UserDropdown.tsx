@@ -84,11 +84,13 @@ const UserDropdown: React.FC = () => {
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: -12, opacity: 0 }}
             transition={{ type: "spring", stiffness: 200, damping: 25 }}
-            className="fixed top-[68px] right-0 w-64 bg-[#F4EFE4] z-10"
+            className="absolute top-full right-0 w-64 bg-[#F4EFE4] z-10"
             style={{
               borderLeft: "1.5px solid #1A1612",
               borderBottom: "1.5px solid #1A1612",
               boxShadow: "-4px 4px 0 #1A1612",
+              top: "52px", // flush, accounts for header border
+              right: "-8px",
             }}
           >
             <nav
@@ -99,7 +101,7 @@ const UserDropdown: React.FC = () => {
                 Account
               </span>
 
-              <Link
+              {/* <Link
                 href="/dashboard"
                 onClick={() => setIsOpen(false)}
                 className="flex items-center gap-3 px-3 py-2.5 text-[12px] tracking-wide text-[#4A4035] border-[1.5px] border-transparent hover:text-[#3D3580] hover:bg-[#EAE8F5] hover:border-[#C5C0E8] transition-all"
@@ -122,7 +124,7 @@ const UserDropdown: React.FC = () => {
                   <rect x="3" y="14" width="7" height="7" />
                 </svg>
                 Dashboard
-              </Link>
+              </Link> */}
 
               <button
                 onClick={handleLogout}

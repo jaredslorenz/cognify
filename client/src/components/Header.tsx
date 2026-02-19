@@ -106,7 +106,7 @@ const Header: React.FC = () => {
         >
           {user ? (
             // ── Logged in: show dropdown
-            <div className="flex items-center px-4">
+            <div className="flex items-center px-2 relative">
               <UserDropdown />
             </div>
           ) : (
