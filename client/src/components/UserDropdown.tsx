@@ -29,7 +29,7 @@ const UserDropdown: React.FC = () => {
   const handleLogout = async () => {
     try {
       await signOut();
-      window.location.href = "/signin";
+      window.location.href = "/";
     } catch (err) {
       console.error("Error signing out:", err);
     }
@@ -37,34 +37,22 @@ const UserDropdown: React.FC = () => {
 
   if (isLoading) return null;
 
-  if (!user) {
-    return (
-      <div className="flex items-center gap-0">
-        <Link href="/signin">
-          <button
-            className="px-4 py-2 text-[11px] tracking-[0.14em] uppercase text-[#4A4035] border-[1.5px] border-transparent hover:border-[#CEC4AE] hover:bg-[#EDE5D4] transition-all cursor-pointer"
-            style={{ fontFamily: "'DM Mono', monospace" }}
-          >
-            Sign In
-          </button>
-        </Link>
-        <Link href="/signup">
-          <button
-            className="px-4 py-2 text-[11px] tracking-[0.14em] uppercase bg-[#1A1612] text-[#F4EFE4] border-[1.5px] border-[#1A1612] hover:bg-[#3D3580] hover:border-[#3D3580] transition-all cursor-pointer"
-            style={{ fontFamily: "'DM Mono', monospace" }}
-          >
-            Sign Up
-          </button>
-        </Link>
-      </div>
-    );
-  }
+  if (!user) return null; // Header handles logged-out state
 
   return (
     <div className="relative" ref={dropdownRef}>
       {/* Trigger button */}
       <button
-        className="p-2 border-[1.5px] border-transparent hover:border-[#CEC4AE] hover:bg-[#EDE5D4] transition-all cursor-pointer"
+        className="p-2 border-[1.5px] border-transparent transition-all cursor-pointer"
+        style={{ transition: "border-color 0.15s, background 0.15s" }}
+        onMouseEnter={(e) => {
+          (e.currentTarget as HTMLElement).style.borderColor = "#2a2520";
+          (e.currentTarget as HTMLElement).style.background = "#2a2520";
+        }}
+        onMouseLeave={(e) => {
+          (e.currentTarget as HTMLElement).style.borderColor = "transparent";
+          (e.currentTarget as HTMLElement).style.background = "transparent";
+        }}
         onClick={() => setIsOpen((prev) => !prev)}
       >
         <motion.div
@@ -80,7 +68,7 @@ const UserDropdown: React.FC = () => {
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
-            className="text-[#1A1612]"
+            style={{ color: "#8A7D6A" }}
           >
             <circle cx="12" cy="7" r="4" />
             <path d="M5.5 21a7 7 0 0 1 13 0" />
@@ -96,9 +84,12 @@ const UserDropdown: React.FC = () => {
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: -12, opacity: 0 }}
             transition={{ type: "spring", stiffness: 200, damping: 25 }}
-            className="fixed top-[68px] right-0 w-64
-                       bg-[#F4EFE4] border-l-[1.5px] border-b-[1.5px] border-[#1A1612]
-                       shadow-[-4px_4px_0_#1A1612] z-10"
+            className="fixed top-[68px] right-0 w-64 bg-[#F4EFE4] z-10"
+            style={{
+              borderLeft: "1.5px solid #1A1612",
+              borderBottom: "1.5px solid #1A1612",
+              boxShadow: "-4px 4px 0 #1A1612",
+            }}
           >
             <nav
               className="flex flex-col gap-1 px-5 py-5"
@@ -108,13 +99,36 @@ const UserDropdown: React.FC = () => {
                 Account
               </span>
 
+              <Link
+                href="/dashboard"
+                onClick={() => setIsOpen(false)}
+                className="flex items-center gap-3 px-3 py-2.5 text-[12px] tracking-wide text-[#4A4035] border-[1.5px] border-transparent hover:text-[#3D3580] hover:bg-[#EAE8F5] hover:border-[#C5C0E8] transition-all"
+                style={{ textDecoration: "none" }}
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="15"
+                  height="15"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  style={{ color: "#8A7D6A" }}
+                >
+                  <rect x="3" y="3" width="7" height="7" />
+                  <rect x="14" y="3" width="7" height="7" />
+                  <rect x="14" y="14" width="7" height="7" />
+                  <rect x="3" y="14" width="7" height="7" />
+                </svg>
+                Dashboard
+              </Link>
+
               <button
                 onClick={handleLogout}
-                className="flex items-center gap-3 px-3 py-2.5 text-[12px] tracking-wide text-[#4A4035]
-                           hover:text-[#3D3580] hover:bg-[#EAE8F5] border-[1.5px] border-transparent
-                           hover:border-[#C5C0E8] transition-all cursor-pointer w-full text-left"
+                className="flex items-center gap-3 px-3 py-2.5 text-[12px] tracking-wide text-[#4A4035] hover:text-[#3D3580] hover:bg-[#EAE8F5] border-[1.5px] border-transparent hover:border-[#C5C0E8] transition-all cursor-pointer w-full text-left"
               >
-                <LogOut size={15} className="text-[#8A7D6A]" />
+                <LogOut size={15} style={{ color: "#8A7D6A" }} />
                 Logout
               </button>
             </nav>

@@ -18,6 +18,7 @@ export default function Icon() {
         alignItems: "center",
         justifyContent: "center",
         position: "relative",
+        borderRadius: "8px",
       }}
     >
       {/* Italic C */}

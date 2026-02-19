@@ -89,9 +89,15 @@ body {
 }
 
 [data-amplify-authenticator] [data-amplify-form] {
-  background: #f4efe4;
+  background: #f4efe4 !important;
   box-shadow: 5px 5px 0 #1a1612;
   border: 1.5px solid #1a1612;
+}
+
+[data-amplify-authenticator] [data-amplify-router] {
+  background: #f4efe4 !important;
+  border: none !important;
+  box-shadow: none !important;
 }
 
 /* ===== Hide default Amplify tabs ===== */

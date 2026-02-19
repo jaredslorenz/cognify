@@ -14,16 +14,29 @@ import { useRouter, usePathname } from "next/navigation";
 const components = {
   Header() {
     return (
-      <View className="mt-4 mb-7">
-        <Heading
-          level={3}
-          className="!text-2xl bg-white !text-black !font-bold"
+      <View style={{ marginTop: "16px", marginBottom: "28px" }}>
+        <div
+          style={{
+            fontFamily: "'Fraunces', serif",
+            fontSize: "28px",
+            fontWeight: 300,
+            letterSpacing: "-0.02em",
+            color: "#1A1612",
+          }}
         >
-          Cognify
-        </Heading>
-        <p className="text-zinc-600 mt-2">
-          <span className="font-bold">Welcome! </span>
-          Please sign in to continue
+          cogni<em style={{ fontStyle: "italic", color: "#3D3580" }}>fy</em>
+        </div>
+        <p
+          style={{
+            fontFamily: "'DM Mono', monospace",
+            fontSize: "11px",
+            letterSpacing: "0.1em",
+            textTransform: "uppercase",
+            color: "#8A7D6A",
+            marginTop: "8px",
+          }}
+        >
+          Sign in to continue
         </p>
       </View>
     );

@@ -41,21 +41,21 @@ export const handleSPACEOCR = async (req: Request, res: Response) => {
   }
 };
 
-if (!process.env.GOOGLE_VISION_KEY) {
-  throw new Error("GOOGLE_VISION_KEY not set");
-}
-
-const credentials = JSON.parse(process.env.GOOGLE_VISION_KEY);
-
-// VERY IMPORTANT
-credentials.private_key = credentials.private_key.replace(/\\n/g, "\n");
-
-const client = new vision.ImageAnnotatorClient({
-  credentials,
-});
-
 export const handleOCR = async (req: Request, res: Response) => {
   try {
+    if (!process.env.GOOGLE_VISION_KEY) {
+      throw new Error("GOOGLE_VISION_KEY not set");
+    }
+
+    const credentials = JSON.parse(process.env.GOOGLE_VISION_KEY);
+
+    // VERY IMPORTANT
+    credentials.private_key = credentials.private_key.replace(/\\n/g, "\n");
+
+    const client = new vision.ImageAnnotatorClient({
+      credentials,
+    });
+
     if (!req.file) {
       return res.status(400).json({ error: "No file uploaded" });
     }
