@@ -6,12 +6,12 @@ import {
   useGetChatGPTProblemsMutation,
   useGetChatGPTResponseMutation,
 } from "@/api/chatgptApi";
+import {
+  useStoreSolvedMutation,
+  useStorePracticeMutation,
+} from "@/api/uploadsApi";
 import { motion, AnimatePresence } from "framer-motion";
 import { usePathname } from "next/navigation";
-import {
-  useUploadAndStoreMutation,
-  useUploadToS3Mutation,
-} from "@/api/uploadsApi";
 import { useGetAuthUserQuery } from "@/api/authApi";
 
 interface PracticeResponse {
@@ -29,7 +29,6 @@ interface UploadBoxProps {
 }
 
 // ── PROBLEM CARD ─────────────────────────────────────────────
-// Extracted so each card has its own independent hint/reveal state
 const ProblemCard = ({
   problem,
   index,
@@ -76,7 +75,6 @@ const ProblemCard = ({
       </div>
 
       <div className="p-6 flex flex-col gap-4">
-        {/* question */}
         <p
           className="font-light leading-relaxed text-[#1A1612]"
           style={{ fontFamily: "'Fraunces', serif", fontSize: "16px" }}
@@ -84,7 +82,6 @@ const ProblemCard = ({
           {problem.question}
         </p>
 
-        {/* hints */}
         {problem.hints.length > 0 && (
           <div className="flex flex-col gap-2">
             <AnimatePresence>
@@ -111,7 +108,6 @@ const ProblemCard = ({
               ))}
             </AnimatePresence>
 
-            {/* answer */}
             <AnimatePresence>
               {revealed && (
                 <motion.div
@@ -135,7 +131,6 @@ const ProblemCard = ({
               )}
             </AnimatePresence>
 
-            {/* full walkthrough — solve page only */}
             <AnimatePresence>
               {revealed && problem.fullSolution && (
                 <motion.div
@@ -161,40 +156,55 @@ const ProblemCard = ({
           </div>
         )}
 
-        {/* controls */}
-        <div className="flex items-center justify-between mt-1">
-          {!revealed ? (
-            <button
-              onClick={() => {
-                if (hintStep < (problem.hints?.length ?? 0)) {
-                  setHintStep((h) => h + 1);
-                } else {
-                  setRevealed(true);
-                }
-              }}
-              className="text-[10px] tracking-[0.12em] uppercase text-[#3D3580] border-b border-[#C5C0E8] cursor-pointer hover:border-[#3D3580] transition-colors"
-              style={{ fontFamily: "'DM Mono', monospace" }}
-            >
-              {hintStep === 0
-                ? "Show first hint →"
-                : hintStep < (problem.hints?.length ?? 0)
-                  ? `Next hint (${hintStep}/${problem.hints.length}) →`
-                  : "Reveal answer →"}
-            </button>
-          ) : (
-            <button
-              onClick={() => {
-                setHintStep(0);
-                setRevealed(false);
-              }}
-              className="text-[10px] tracking-[0.12em] uppercase text-[#8A7D6A] border-b border-[#CEC4AE] cursor-pointer hover:text-[#3D3580] hover:border-[#3D3580] transition-colors"
-              style={{ fontFamily: "'DM Mono', monospace" }}
-            >
-              ↺ Try again
-            </button>
-          )}
+        <div className="flex items-start justify-between mt-1">
+          <div className="flex flex-col gap-2">
+            {!revealed ? (
+              <>
+                <button
+                  onClick={() => {
+                    if (hintStep < (problem.hints?.length ?? 0)) {
+                      setHintStep((h) => h + 1);
+                    } else {
+                      setRevealed(true);
+                    }
+                  }}
+                  className="text-[10px] tracking-[0.12em] uppercase text-[#3D3580] border-b border-[#C5C0E8] cursor-pointer hover:border-[#3D3580] transition-colors w-fit"
+                  style={{ fontFamily: "'DM Mono', monospace" }}
+                >
+                  {hintStep === 0
+                    ? "Show first hint →"
+                    : hintStep < (problem.hints?.length ?? 0)
+                      ? `Next hint (${hintStep}/${problem.hints.length}) →`
+                      : "Reveal answer →"}
+                </button>
 
-          {/* progress dots */}
+                {hintStep < (problem.hints?.length ?? 0) && (
+                  <button
+                    onClick={() => {
+                      setHintStep(problem.hints.length);
+                      setRevealed(true);
+                    }}
+                    className="text-[10px] tracking-[0.12em] uppercase text-[#CEC4AE] border-b border-transparent hover:text-[#8A7D6A] hover:border-[#CEC4AE] transition-colors cursor-pointer w-fit"
+                    style={{ fontFamily: "'DM Mono', monospace" }}
+                  >
+                    Skip hints
+                  </button>
+                )}
+              </>
+            ) : (
+              <button
+                onClick={() => {
+                  setHintStep(0);
+                  setRevealed(false);
+                }}
+                className="text-[10px] tracking-[0.12em] uppercase text-[#8A7D6A] border-b border-[#CEC4AE] cursor-pointer hover:text-[#3D3580] hover:border-[#3D3580] transition-colors w-fit"
+                style={{ fontFamily: "'DM Mono', monospace" }}
+              >
+                ↺ Try again
+              </button>
+            )}
+          </div>
+
           <div className="flex gap-1.5">
             {(problem.hints ?? []).map((_, i) => (
               <div
@@ -220,7 +230,7 @@ const ProblemCard = ({
   );
 };
 
-// ── UPLOAD BOX ────────────────────────────────────────────────
+// ── MAIN COMPONENT ────────────────────────────────────────────
 const UploadBox = ({
   subject,
   topic,
@@ -243,13 +253,14 @@ const UploadBox = ({
     useGetChatGPTProblemsMutation(),
   ];
 
+  const [storeSolved] = useStoreSolvedMutation();
+  const [storePractice] = useStorePracticeMutation();
+
   const pathname = usePathname();
   const isSolvePage = !!pathname.match(/^\/(solve)$/);
   const isPracticePage = !!pathname.match(/^\/(practice)$/);
 
   const { data: authUser, isLoading: authLoading } = useGetAuthUserQuery();
-  const [uploadAndStore] = useUploadAndStoreMutation();
-  const [uploadToS3] = useUploadToS3Mutation();
 
   const resetState = () => {
     setProblems([]);
@@ -279,7 +290,6 @@ const UploadBox = ({
     e.preventDefault();
     e.stopPropagation();
   };
-
   const handleClick = () => inputRef.current?.click();
 
   const handleSolve = async () => {
@@ -306,26 +316,38 @@ const UploadBox = ({
 
       // 2. ChatGPT
       if (isSolvePage) {
-        // /solve returns a single PracticeResponse directly
         const chatData = await chatGPTResponse({
           text: extractedText,
         }).unwrap();
-        setProblems([
-          {
-            question: chatData?.question ?? "No question returned.",
-            hints: chatData?.hints ?? [],
-            answer: chatData?.answer ?? "",
-            fullSolution: chatData?.fullSolution,
-          },
-        ]);
+
+        const parsed: PracticeResponse = {
+          question: chatData?.question ?? "No question returned.",
+          hints: chatData?.hints ?? [],
+          answer: chatData?.answer ?? "",
+          fullSolution: chatData?.fullSolution,
+        };
+
+        setProblems([parsed]);
+
+        // 3. Store — use parsed directly, not stale state
+        if (authUser) {
+          await storeSolved({
+            userId: authUser.userId,
+            file_name: selectedImage.name,
+            question: parsed.question,
+            hints: parsed.hints,
+            answer: parsed.answer,
+            full_solution: parsed.fullSolution,
+            subject: subject,
+          }).unwrap();
+        }
       } else {
-        // /problems returns { problems: [...] } — unwrap the array here
         const chatData = await chatGPTProblems({
           text: extractedText,
           subject: subject ?? undefined,
           topic: topic ?? undefined,
           difficulty,
-          amount, // ← passed through
+          amount,
         }).unwrap();
 
         const parsed: PracticeResponse[] = (chatData?.problems ?? []).map(
@@ -339,28 +361,23 @@ const UploadBox = ({
         setProblems(
           parsed.length > 0
             ? parsed
-            : [
-                {
-                  question: "No problems returned. Try again.",
-                  hints: [],
-                  answer: "",
-                },
-              ],
+            : [{ question: "No problems returned.", hints: [], answer: "" }],
         );
-      }
 
-      // 3. Upload if logged in
-      if (authUser) {
-        const userId = authUser.userId;
-        const file_name = selectedImage?.name;
-        const file_url = "exampleurl";
-        const aiResponse = problems[0]?.answer ?? "";
-        await uploadAndStore({
-          userId,
-          file_name,
-          file_url,
-          aiResponse,
-        }).unwrap();
+        // 3. Store — use parsed directly, not stale state
+        if (authUser && parsed.length > 0) {
+          await storePractice({
+            userId: authUser.userId,
+            file_name: selectedImage.name,
+            subject: subject,
+            difficulty,
+            problems: parsed.map((p) => ({
+              question: p.question,
+              hints: p.hints,
+              answer: p.answer,
+            })),
+          }).unwrap();
+        }
       }
     } catch (error) {
       console.error("Error processing image or AI request:", error);
@@ -393,7 +410,6 @@ const UploadBox = ({
       onDragOver={!previewUrl ? handleDragOver : undefined}
     >
       {!previewUrl ? (
-        /* ── DROP ZONE ── */
         <div
           className="cursor-pointer flex flex-col items-center justify-center gap-3 border-[1.5px] border-dashed border-[#CEC4AE] m-6 py-14 hover:border-[#3D3580] hover:bg-[#F4F3FC] transition-all"
           onClick={handleClick}
@@ -417,7 +433,6 @@ const UploadBox = ({
         </div>
       ) : (
         <div className="flex flex-col items-center p-8 gap-6">
-          {/* Preview */}
           <img
             src={previewUrl}
             alt="Preview"
@@ -427,7 +442,6 @@ const UploadBox = ({
             {selectedImage?.name}
           </p>
 
-          {/* Action buttons */}
           <div className="flex w-full max-w-md">
             <button
               onClick={(e) => {
@@ -443,7 +457,7 @@ const UploadBox = ({
                   ? "Generating..."
                   : "Solving..."
                 : isPracticePage
-                  ? `Generate ${amount > 1 ? `${amount} Problems` : "Problem"}`
+                  ? `Generate ${amount > 1 ? `${amount} Problems` : "Practice"}`
                   : "Solve"}
             </button>
             <button
@@ -455,7 +469,6 @@ const UploadBox = ({
             </button>
           </div>
 
-          {/* ── PROBLEM CARDS ── */}
           <AnimatePresence>
             {problems.length > 0 && (
               <motion.div
@@ -464,7 +477,6 @@ const UploadBox = ({
                 exit={{ opacity: 0 }}
                 className="w-full flex flex-col gap-6"
               >
-                {/* summary row when multiple */}
                 {problems.length > 1 && (
                   <div className="flex items-center gap-3">
                     <span className="block w-5 h-[1.5px] bg-[#3D3580]" />
@@ -476,7 +488,6 @@ const UploadBox = ({
                     </span>
                   </div>
                 )}
-
                 {problems.map((problem, i) => (
                   <ProblemCard
                     key={i}

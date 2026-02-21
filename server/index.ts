@@ -1,4 +1,5 @@
 import express from "express";
+import pool from "./src/db";
 import cors from "cors";
 import dotenv from "dotenv";
 import ocrRoutes from "./src/routes/ocrRoutes";
@@ -28,4 +29,12 @@ app.use("/api/uploads", uploadRoutes);
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+});
+
+pool.query("SELECT NOW()", (err, res) => {
+  if (err) {
+    console.error("Database connection failed:", err);
+  } else {
+    console.log("Database connected at:", res.rows[0].now);
+  }
 });

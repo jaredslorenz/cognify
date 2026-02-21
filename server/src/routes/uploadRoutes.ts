@@ -1,19 +1,25 @@
-// server/routes/uploads.ts
 import express from "express";
-import multer from "multer";
-import { uploadToS3 } from "../controllers/s3Controllers";
-import { storeUpload, getUserUploads } from "../controllers/uploadControllers";
+import {
+  storeSolved,
+  storePractice,
+  getSolvedProblems,
+  getPracticeProblems,
+  getUserStats,
+  deleteProblem,
+} from "../controllers/uploadControllers";
 
 const router = express.Router();
-const upload = multer(); // in-memory storage for buffer
 
-// Upload to S3
-router.post("/s3", upload.single("image"), uploadToS3);
+// Store
+router.post("/solved", storeSolved);
+router.post("/practice", storePractice);
 
-// Store a new user upload in DB
-router.post("/store", storeUpload);
+// Fetch
+router.get("/solved", getSolvedProblems);
+router.get("/practice", getPracticeProblems);
+router.get("/stats", getUserStats);
 
-// Get uploads for a user
-router.get("/", getUserUploads);
+// Delete
+router.delete("/", deleteProblem);
 
 export default router;
