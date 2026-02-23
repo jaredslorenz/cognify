@@ -70,36 +70,56 @@ export const userUploadsApi = createApi({
   baseQuery: fetchBaseQuery({
     baseUrl: process.env.NEXT_PUBLIC_API_URL,
   }),
-  tagTypes: ["Solved", "Practice", "Stats"], // add this
   endpoints: (builder) => ({
+    // Store a solved homework problem
     storeSolved: builder.mutation<SolvedProblem, StoreSolvedRequest>({
-      query: (body) => ({ url: "uploads/solved", method: "POST", body }),
-      invalidatesTags: ["Solved", "Stats"], // add this
+      query: (body) => ({
+        url: "uploads/solved",
+        method: "POST",
+        body,
+      }),
     }),
 
+    // Store practice problems (array)
     storePractice: builder.mutation<PracticeProblem[], StorePracticeRequest>({
-      query: (body) => ({ url: "uploads/practice", method: "POST", body }),
-      invalidatesTags: ["Practice", "Stats"], // add this
+      query: (body) => ({
+        url: "uploads/practice",
+        method: "POST",
+        body,
+      }),
     }),
 
+    // Fetch solved problems for a user
     getSolvedProblems: builder.query<SolvedProblem[], { userId: string }>({
       query: ({ userId }) => `uploads/solved?userId=${userId}`,
-      providesTags: ["Solved"], // add this
     }),
 
+    // Fetch practice problems for a user
     getPracticeProblems: builder.query<PracticeProblem[], { userId: string }>({
       query: ({ userId }) => `uploads/practice?userId=${userId}`,
-      providesTags: ["Practice"], // add this
     }),
 
+    // Fetch user stats
     getUserStats: builder.query<UserStats, { userId: string }>({
       query: ({ userId }) => `uploads/stats?userId=${userId}`,
-      providesTags: ["Stats"], // add this
     }),
 
+    // Delete a problem
     deleteProblem: builder.mutation<{ deleted: string }, DeleteProblemRequest>({
-      query: (body) => ({ url: "uploads", method: "DELETE", body }),
-      invalidatesTags: ["Solved", "Practice", "Stats"], // add this
+      query: (body) => ({
+        url: "uploads",
+        method: "DELETE",
+        body,
+      }),
+    }),
+
+    // Delete all data for a user (called before account deletion)
+    deleteUserData: builder.mutation<{ deleted: boolean }, { userId: string }>({
+      query: (body) => ({
+        url: "uploads/user",
+        method: "DELETE",
+        body,
+      }),
     }),
   }),
 });
@@ -111,4 +131,5 @@ export const {
   useGetPracticeProblemsQuery,
   useGetUserStatsQuery,
   useDeleteProblemMutation,
+  useDeleteUserDataMutation,
 } = userUploadsApi;

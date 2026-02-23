@@ -210,6 +210,30 @@ export const getUserStats = async (req: Request, res: Response) => {
   }
 };
 
+// ── DELETE ALL USER DATA ─────────────────────────────────────
+export const deleteUserData = async (req: Request, res: Response) => {
+  try {
+    const { userId } = req.body;
+
+    if (!userId) {
+      return res.status(400).json({ error: "Missing userId" });
+    }
+
+    await pool.query(`DELETE FROM solved_problems WHERE user_id = $1`, [
+      userId,
+    ]);
+    await pool.query(`DELETE FROM practice_problems WHERE user_id = $1`, [
+      userId,
+    ]);
+    await pool.query(`DELETE FROM user_stats WHERE user_id = $1`, [userId]);
+
+    res.json({ deleted: true });
+  } catch (error) {
+    console.error("Error deleting user data:", error);
+    res.status(500).json({ error: "Failed to delete user data" });
+  }
+};
+
 // ── DELETE PROBLEM ───────────────────────────────────────────
 export const deleteProblem = async (req: Request, res: Response) => {
   try {

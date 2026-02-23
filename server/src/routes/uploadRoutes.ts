@@ -6,6 +6,7 @@ import {
   getPracticeProblems,
   getUserStats,
   deleteProblem,
+  deleteUserData,
 } from "../controllers/uploadControllers";
 
 const router = express.Router();
@@ -20,6 +21,7 @@ router.get("/practice", getPracticeProblems);
 router.get("/stats", getUserStats);
 
 // Delete
+router.delete("/user", deleteUserData);
 router.delete("/", deleteProblem);
 
 export default router;
