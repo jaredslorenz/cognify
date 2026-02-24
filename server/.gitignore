@@ -1,5 +1,3 @@
-node_modules
-
-google-vision-key.json
+node_modules/
 
 .env
