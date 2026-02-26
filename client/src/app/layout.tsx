@@ -4,7 +4,7 @@ import "./globals.css";
 import Providers from "./(auth)/Providers";
 import { Provider } from "react-redux";
 import { store } from "./store";
-//import "@/utils/amplifyClient";
+import "@/utils/amplifyClient";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",

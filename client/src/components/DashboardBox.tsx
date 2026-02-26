@@ -273,16 +273,14 @@ const DashboardBox = () => {
 
   const { data: user, error, isLoading } = useGetAuthUserQuery();
 
+  // userId no longer passed — server reads it from the verified JWT
   const { data: solved, isLoading: solvedLoading } = useGetSolvedProblemsQuery(
-    { userId: user?.userId as string },
+    undefined,
     { skip: !user },
   );
 
   const { data: practiced, isLoading: practiceLoading } =
-    useGetPracticeProblemsQuery(
-      { userId: user?.userId as string },
-      { skip: !user },
-    );
+    useGetPracticeProblemsQuery(undefined, { skip: !user });
 
   const uploadsLoading = solvedLoading || practiceLoading;
 
@@ -506,9 +504,6 @@ const DashboardBox = () => {
                             style={{ fontFamily: "'Fraunces', serif" }}
                           >
                             {item.question}
-                          </p>
-                          <p className="text-[10px] tracking-[0.08em] uppercase text-[#8A7D6A] mb-2">
-                            {new Date(item.created_at).toLocaleDateString()}
                           </p>
                           <p
                             className="text-[10px] tracking-[0.1em] uppercase text-[#3D3580]"

@@ -251,7 +251,6 @@ const ProblemModal = ({
           className="w-full max-w-2xl max-h-[90vh] overflow-y-auto"
           onClick={(e) => e.stopPropagation()}
         >
-          {/* Modal header */}
           <div className="flex items-center justify-between bg-[#1A1612] px-6 py-4 border-[1.5px] border-[#1A1612] border-b-0">
             <div className="flex items-center gap-3">
               <span className="block w-5 h-[1.5px] bg-[#3D3580]" />
@@ -676,37 +675,27 @@ const LoggedOutDashboard = () => (
 );
 
 // ── LOGGED IN STATE ──────────────────────────────────────────
-const LoggedInDashboard = ({
-  userId,
-  username,
-}: {
-  userId: string;
-  username: string;
-}) => {
+const LoggedInDashboard = ({ username }: { username: string }) => {
   const [selected, setSelected] = useState<SelectedProblem | null>(null);
 
-  const { data: solved, isLoading: solvedLoading } = useGetSolvedProblemsQuery({
-    userId,
-  });
+  // userId no longer needed — server reads it from the verified JWT
+  const { data: solved, isLoading: solvedLoading } =
+    useGetSolvedProblemsQuery();
   const { data: practiced, isLoading: practiceLoading } =
-    useGetPracticeProblemsQuery({ userId });
-  const { data: stats, isLoading: statsLoading } = useGetUserStatsQuery({
-    userId,
-  });
+    useGetPracticeProblemsQuery();
+  const { data: stats, isLoading: statsLoading } = useGetUserStatsQuery();
   const [deleteProblem] = useDeleteProblemMutation();
 
   const handleDelete = async (id: string, type: "solved" | "practice") => {
-    await deleteProblem({ id, type, userId });
+    await deleteProblem({ id, type });
   };
 
   return (
     <div className="w-full" style={{ padding: "72px 56px" }}>
-      {/* Modal */}
       {selected && (
         <ProblemModal selected={selected} onClose={() => setSelected(null)} />
       )}
 
-      {/* Page header */}
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
@@ -924,10 +913,7 @@ const DashboardContent = () => {
   }
 
   return user ? (
-    <LoggedInDashboard
-      userId={user.userId}
-      username={user.username ?? "there"}
-    />
+    <LoggedInDashboard username={user.username ?? "there"} />
   ) : (
     <LoggedOutDashboard />
   );

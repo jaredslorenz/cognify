@@ -1,7 +1,7 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import { fetchAuthSession } from "aws-amplify/auth";
 
 // ── TYPES ─────────────────────────────────────────────────────
-
 export interface SolvedProblem {
   id: string;
   user_id: string;
@@ -34,9 +34,8 @@ export interface UserStats {
 }
 
 // ── STORE REQUESTS ────────────────────────────────────────────
-
+// Note: userId removed from all requests — server extracts it from JWT
 export interface StoreSolvedRequest {
-  userId: string;
   file_name?: string;
   question: string;
   hints: string[];
@@ -46,7 +45,6 @@ export interface StoreSolvedRequest {
 }
 
 export interface StorePracticeRequest {
-  userId: string;
   file_name?: string;
   subject?: string;
   difficulty?: "easy" | "medium" | "hard";
@@ -60,15 +58,25 @@ export interface StorePracticeRequest {
 export interface DeleteProblemRequest {
   id: string;
   type: "solved" | "practice";
-  userId: string;
 }
 
 // ── API SLICE ─────────────────────────────────────────────────
-
 export const userUploadsApi = createApi({
   reducerPath: "userUploadsApi",
   baseQuery: fetchBaseQuery({
     baseUrl: process.env.NEXT_PUBLIC_API_URL,
+    prepareHeaders: async (headers) => {
+      try {
+        const session = await fetchAuthSession();
+        const { idToken } = session.tokens ?? {};
+        if (idToken) {
+          headers.set("Authorization", `Bearer ${idToken}`);
+        }
+      } catch {
+        // Not authenticated — request will be rejected by server with 401
+      }
+      return headers;
+    },
   }),
   tagTypes: ["Solved", "Practice", "Stats"],
   endpoints: (builder) => ({
@@ -76,34 +84,28 @@ export const userUploadsApi = createApi({
       query: (body) => ({ url: "uploads/solved", method: "POST", body }),
       invalidatesTags: ["Solved", "Stats"],
     }),
-
     storePractice: builder.mutation<PracticeProblem[], StorePracticeRequest>({
       query: (body) => ({ url: "uploads/practice", method: "POST", body }),
       invalidatesTags: ["Practice", "Stats"],
     }),
-
-    getSolvedProblems: builder.query<SolvedProblem[], { userId: string }>({
-      query: ({ userId }) => `uploads/solved?userId=${userId}`,
+    getSolvedProblems: builder.query<SolvedProblem[], void>({
+      query: () => "uploads/solved",
       providesTags: ["Solved"],
     }),
-
-    getPracticeProblems: builder.query<PracticeProblem[], { userId: string }>({
-      query: ({ userId }) => `uploads/practice?userId=${userId}`,
+    getPracticeProblems: builder.query<PracticeProblem[], void>({
+      query: () => "uploads/practice",
       providesTags: ["Practice"],
     }),
-
-    getUserStats: builder.query<UserStats, { userId: string }>({
-      query: ({ userId }) => `uploads/stats?userId=${userId}`,
+    getUserStats: builder.query<UserStats, void>({
+      query: () => "uploads/stats",
       providesTags: ["Stats"],
     }),
-
     deleteProblem: builder.mutation<{ deleted: string }, DeleteProblemRequest>({
       query: (body) => ({ url: "uploads", method: "DELETE", body }),
       invalidatesTags: ["Solved", "Practice", "Stats"],
     }),
-
-    deleteUserData: builder.mutation<{ deleted: boolean }, { userId: string }>({
-      query: (body) => ({ url: "uploads/user", method: "DELETE", body }),
+    deleteUserData: builder.mutation<{ deleted: boolean }, void>({
+      query: () => ({ url: "uploads/user", method: "DELETE" }),
       invalidatesTags: ["Solved", "Practice", "Stats"],
     }),
   }),

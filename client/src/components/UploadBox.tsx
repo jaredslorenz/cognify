@@ -290,6 +290,7 @@ const UploadBox = ({
     e.preventDefault();
     e.stopPropagation();
   };
+
   const handleClick = () => inputRef.current?.click();
 
   const handleSolve = async () => {
@@ -329,16 +330,15 @@ const UploadBox = ({
 
         setProblems([parsed]);
 
-        // 3. Store — use parsed directly, not stale state
+        // 3. Store only if authenticated — userId comes from server JWT, not client
         if (authUser) {
           await storeSolved({
-            userId: authUser.userId,
             file_name: selectedImage.name,
             question: parsed.question,
             hints: parsed.hints,
             answer: parsed.answer,
             full_solution: parsed.fullSolution,
-            subject: subject,
+            subject,
           }).unwrap();
         }
       } else {
@@ -364,12 +364,11 @@ const UploadBox = ({
             : [{ question: "No problems returned.", hints: [], answer: "" }],
         );
 
-        // 3. Store — use parsed directly, not stale state
+        // 3. Store only if authenticated — userId comes from server JWT, not client
         if (authUser && parsed.length > 0) {
           await storePractice({
-            userId: authUser.userId,
             file_name: selectedImage.name,
-            subject: subject,
+            subject,
             difficulty,
             problems: parsed.map((p) => ({
               question: p.question,

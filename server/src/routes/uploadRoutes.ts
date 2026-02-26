@@ -1,4 +1,5 @@
 import express from "express";
+import { requireAuth } from "../middleware/authMiddleware";
 import {
   storeSolved,
   storePractice,
@@ -11,16 +12,14 @@ import {
 
 const router = express.Router();
 
-// Store
+// All upload routes require a valid Cognito JWT
+router.use(requireAuth);
+
 router.post("/solved", storeSolved);
 router.post("/practice", storePractice);
-
-// Fetch
 router.get("/solved", getSolvedProblems);
 router.get("/practice", getPracticeProblems);
 router.get("/stats", getUserStats);
-
-// Delete
 router.delete("/user", deleteUserData);
 router.delete("/", deleteProblem);
 

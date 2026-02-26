@@ -1,20 +1,15 @@
-import { Request, Response } from "express";
+import { Response } from "express";
 import pool from "../db";
+import { AuthRequest } from "../middleware/authMiddleware";
 
 // ── STORE SOLVED PROBLEM ─────────────────────────────────────
-export const storeSolved = async (req: Request, res: Response) => {
+export const storeSolved = async (req: AuthRequest, res: Response) => {
   try {
-    const {
-      userId,
-      file_name,
-      question,
-      hints,
-      answer,
-      full_solution,
-      subject,
-    } = req.body;
+    const userId = req.userId!; // from verified JWT — never from client
+    const { file_name, question, hints, answer, full_solution, subject } =
+      req.body;
 
-    if (!userId || !question || !hints || !answer) {
+    if (!question || !hints || !answer) {
       return res.status(400).json({ error: "Missing required fields" });
     }
 
@@ -33,7 +28,6 @@ export const storeSolved = async (req: Request, res: Response) => {
       ],
     );
 
-    // Update user_stats
     await pool.query(
       `INSERT INTO user_stats (user_id, hints_used, streak_days, last_active)
        VALUES ($1, $2, 1, CURRENT_DATE)
@@ -56,25 +50,18 @@ export const storeSolved = async (req: Request, res: Response) => {
 };
 
 // ── STORE PRACTICE PROBLEMS ──────────────────────────────────
-// Accepts an array of problems and inserts each as a separate row
-export const storePractice = async (req: Request, res: Response) => {
+export const storePractice = async (req: AuthRequest, res: Response) => {
   try {
-    const { userId, file_name, problems, subject, difficulty } = req.body;
+    const userId = req.userId!;
+    const { file_name, problems, subject, difficulty } = req.body;
 
-    if (
-      !userId ||
-      !problems ||
-      !Array.isArray(problems) ||
-      problems.length === 0
-    ) {
+    if (!problems || !Array.isArray(problems) || problems.length === 0) {
       return res.status(400).json({ error: "Missing required fields" });
     }
 
     const inserted = [];
-
     for (const problem of problems) {
       const { question, hints, answer } = problem;
-
       if (!question || !hints || !answer) continue;
 
       const result = await pool.query(
@@ -91,11 +78,9 @@ export const storePractice = async (req: Request, res: Response) => {
           difficulty ?? "medium",
         ],
       );
-
       inserted.push(result.rows[0]);
     }
 
-    // Update user_stats
     const totalHints = problems.reduce(
       (acc: number, p: any) => acc + (p.hints?.length ?? 0),
       0,
@@ -122,13 +107,9 @@ export const storePractice = async (req: Request, res: Response) => {
 };
 
 // ── GET SOLVED PROBLEMS ──────────────────────────────────────
-export const getSolvedProblems = async (req: Request, res: Response) => {
+export const getSolvedProblems = async (req: AuthRequest, res: Response) => {
   try {
-    const { userId } = req.query;
-
-    if (!userId || typeof userId !== "string") {
-      return res.status(400).json({ error: "Missing userId" });
-    }
+    const userId = req.userId!;
 
     const result = await pool.query(
       `SELECT id, file_name, question, hints, answer, full_solution, subject, created_at
@@ -147,13 +128,9 @@ export const getSolvedProblems = async (req: Request, res: Response) => {
 };
 
 // ── GET PRACTICE PROBLEMS ────────────────────────────────────
-export const getPracticeProblems = async (req: Request, res: Response) => {
+export const getPracticeProblems = async (req: AuthRequest, res: Response) => {
   try {
-    const { userId } = req.query;
-
-    if (!userId || typeof userId !== "string") {
-      return res.status(400).json({ error: "Missing userId" });
-    }
+    const userId = req.userId!;
 
     const result = await pool.query(
       `SELECT id, file_name, question, hints, answer, subject, difficulty, created_at
@@ -172,25 +149,20 @@ export const getPracticeProblems = async (req: Request, res: Response) => {
 };
 
 // ── GET USER STATS ───────────────────────────────────────────
-export const getUserStats = async (req: Request, res: Response) => {
+export const getUserStats = async (req: AuthRequest, res: Response) => {
   try {
-    const { userId } = req.query;
+    const userId = req.userId!;
 
-    if (!userId || typeof userId !== "string") {
-      return res.status(400).json({ error: "Missing userId" });
-    }
-
-    // Get stats row
     const statsResult = await pool.query(
       `SELECT hints_used, streak_days FROM user_stats WHERE user_id = $1;`,
       [userId],
     );
 
-    // Compute counts from the actual tables
     const solvedCount = await pool.query(
       `SELECT COUNT(*) FROM solved_problems WHERE user_id = $1;`,
       [userId],
     );
+
     const practiceCount = await pool.query(
       `SELECT COUNT(*) FROM practice_problems WHERE user_id = $1;`,
       [userId],
@@ -211,13 +183,9 @@ export const getUserStats = async (req: Request, res: Response) => {
 };
 
 // ── DELETE ALL USER DATA ─────────────────────────────────────
-export const deleteUserData = async (req: Request, res: Response) => {
+export const deleteUserData = async (req: AuthRequest, res: Response) => {
   try {
-    const { userId } = req.body;
-
-    if (!userId) {
-      return res.status(400).json({ error: "Missing userId" });
-    }
+    const userId = req.userId!;
 
     await pool.query(`DELETE FROM solved_problems WHERE user_id = $1`, [
       userId,
@@ -235,17 +203,17 @@ export const deleteUserData = async (req: Request, res: Response) => {
 };
 
 // ── DELETE PROBLEM ───────────────────────────────────────────
-export const deleteProblem = async (req: Request, res: Response) => {
+export const deleteProblem = async (req: AuthRequest, res: Response) => {
   try {
-    const { id, type, userId } = req.body;
+    const userId = req.userId!;
+    const { id, type } = req.body;
 
-    if (!id || !type || !userId) {
+    if (!id || !type) {
       return res.status(400).json({ error: "Missing required fields" });
     }
 
     const table = type === "solved" ? "solved_problems" : "practice_problems";
 
-    // Make sure the row belongs to the user before deleting
     const result = await pool.query(
       `DELETE FROM ${table} WHERE id = $1 AND user_id = $2 RETURNING id;`,
       [id, userId],
