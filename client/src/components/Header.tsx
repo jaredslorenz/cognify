@@ -157,7 +157,6 @@ const Header: React.FC = () => {
           )}
         </div>
       </header>
-
       <Sidebar isOpen={isSidebarOpen} />
     </>
   );

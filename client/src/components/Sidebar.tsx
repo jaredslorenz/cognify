@@ -14,7 +14,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
     <AnimatePresence>
       {isOpen && (
         <motion.aside
-          className="fixed top-[68px] left-0 h-[calc(100vh-68px)] w-64
+          className="fixed top-[52px] left-0 bottom-0 w-64
                      bg-[#F4EFE4] z-40 border-r-[1.5px] border-[#1A1612] shadow-[4px_0_24px_rgba(26,22,18,0.08)]"
           initial={{ x: "-100%" }}
           animate={{ x: 0 }}

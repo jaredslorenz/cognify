@@ -8,8 +8,8 @@ import {
 
 const getUserPool = () =>
   new CognitoUserPool({
-    UserPoolId: process.env.EXPO_PUBLIC_AWS_COGNITO_USER_POOL_ID ?? "",
-    ClientId: process.env.EXPO_PUBLIC_AWS_COGNITO_USER_POOL_CLIENT_ID ?? "",
+    UserPoolId: process.env.EXPO_PUBLIC_USER_POOL_ID ?? "",
+    ClientId: process.env.EXPO_PUBLIC_USER_POOL_CLIENT_ID ?? "",
   });
 
 // Store current user session in memory

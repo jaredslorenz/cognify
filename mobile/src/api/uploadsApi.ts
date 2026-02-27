@@ -1,4 +1,5 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import { getAuthToken } from "../utils/getAuthToken";
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
@@ -33,28 +34,37 @@ export interface UserStats {
 
 export const uploadsApi = createApi({
   reducerPath: "uploadsApi",
-  baseQuery: fetchBaseQuery({ baseUrl: API_URL }),
+  baseQuery: fetchBaseQuery({
+    baseUrl: API_URL,
+    prepareHeaders: async (headers) => {
+      const token = await getAuthToken();
+      if (token) {
+        headers.set("Authorization", `Bearer ${token}`);
+      }
+      return headers;
+    },
+  }),
   tagTypes: ["Solved", "Practice", "Stats"],
   endpoints: (builder) => ({
-    getSolvedProblems: builder.query<SolvedProblem[], string>({
-      query: (userId) => `uploads/solved?userId=${userId}`,
+    // userId removed from all — server extracts from verified JWT
+    getSolvedProblems: builder.query<SolvedProblem[], void>({
+      query: () => `uploads/solved`,
       providesTags: ["Solved"],
     }),
 
-    getPracticeProblems: builder.query<PracticeProblem[], string>({
-      query: (userId) => `uploads/practice?userId=${userId}`,
+    getPracticeProblems: builder.query<PracticeProblem[], void>({
+      query: () => `uploads/practice`,
       providesTags: ["Practice"],
     }),
 
-    getUserStats: builder.query<UserStats, string>({
-      query: (userId) => `uploads/stats?userId=${userId}`,
+    getUserStats: builder.query<UserStats, void>({
+      query: () => `uploads/stats`,
       providesTags: ["Stats"],
     }),
 
     storeSolved: builder.mutation<
       void,
       {
-        userId: string;
         file_name?: string;
         question: string;
         hints: string[];
@@ -74,7 +84,6 @@ export const uploadsApi = createApi({
     storePractice: builder.mutation<
       void,
       {
-        userId: string;
         file_name?: string;
         problems: { question: string; hints: string[]; answer: string }[];
         subject?: string;

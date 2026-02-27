@@ -8,6 +8,7 @@ import {
   Platform,
   UIManager,
 } from "react-native";
+import * as Haptics from "expo-haptics";
 import { PracticeResponse } from "../screens/SolveScreen";
 
 if (Platform.OS === "android") {
@@ -30,8 +31,12 @@ export default function ProblemCard({
   const [hintStep, setHintStep] = useState(0);
   const [revealed, setRevealed] = useState(false);
 
-  const handleNext = () => {
+  const animate = () =>
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+
+  const handleNext = () => {
+    animate();
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     if (hintStep < problem.hints.length) {
       setHintStep((h) => h + 1);
     } else {
@@ -39,15 +44,27 @@ export default function ProblemCard({
     }
   };
 
+  // Skip all hints — jump straight to answer
+  const handleSkip = () => {
+    animate();
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    setHintStep(problem.hints.length);
+    setRevealed(true);
+  };
+
   const handleReset = () => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    animate();
+    Haptics.selectionAsync();
     setHintStep(0);
     setRevealed(false);
   };
 
+  const hasHints = problem.hints.length > 0;
+  const allHintsShown = hintStep >= problem.hints.length;
+
   return (
     <View style={styles.card}>
-      {/* Card header */}
+      {/* Header */}
       <View style={styles.cardHeader}>
         <View style={styles.cardHeaderLeft}>
           <View style={styles.headerRule} />
@@ -68,7 +85,7 @@ export default function ProblemCard({
         {/* Question */}
         <Text style={styles.question}>{problem.question}</Text>
 
-        {/* Hints */}
+        {/* Hints revealed so far */}
         {problem.hints.slice(0, hintStep).map((hint, i) => (
           <View key={i} style={styles.hintBox}>
             <Text style={styles.hintLabel}>HINT {i + 1}</Text>
@@ -95,15 +112,29 @@ export default function ProblemCard({
         {/* Controls */}
         <View style={styles.controls}>
           {!revealed ? (
-            <TouchableOpacity onPress={handleNext} activeOpacity={0.7}>
-              <Text style={styles.controlBtn}>
-                {hintStep === 0
-                  ? "Show first hint →"
-                  : hintStep < problem.hints.length
-                    ? `Next hint (${hintStep}/${problem.hints.length}) →`
-                    : "Reveal answer →"}
-              </Text>
-            </TouchableOpacity>
+            <View style={styles.controlsLeft}>
+              {/* Primary action */}
+              <TouchableOpacity onPress={handleNext} activeOpacity={0.7}>
+                <Text style={styles.controlBtn}>
+                  {hintStep === 0
+                    ? "Show first hint →"
+                    : hintStep < problem.hints.length
+                      ? `Next hint (${hintStep}/${problem.hints.length}) →`
+                      : "Reveal answer →"}
+                </Text>
+              </TouchableOpacity>
+
+              {/* Skip hints — only shown when hints haven't all been revealed yet */}
+              {hasHints && !allHintsShown && (
+                <TouchableOpacity
+                  onPress={handleSkip}
+                  activeOpacity={0.7}
+                  style={styles.skipBtn}
+                >
+                  <Text style={styles.skipBtnText}>Skip hints →</Text>
+                </TouchableOpacity>
+              )}
+            </View>
           ) : (
             <TouchableOpacity onPress={handleReset} activeOpacity={0.7}>
               <Text style={styles.controlBtnMuted}>↺ Try again</Text>
@@ -153,31 +184,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
   },
-  cardHeaderLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-  },
-  headerRule: {
-    width: 20,
-    height: 1.5,
-    backgroundColor: "#3D3580",
-  },
+  cardHeaderLeft: { flexDirection: "row", alignItems: "center", gap: 10 },
+  headerRule: { width: 20, height: 1.5, backgroundColor: "#5548B0" },
   cardLabel: {
     fontSize: 10,
     letterSpacing: 2,
-    color: "#3D3580",
+    color: "#5548B0",
     fontWeight: "500",
   },
-  cardCounter: {
-    fontSize: 10,
-    color: "#8A7D6A",
-    letterSpacing: 1,
-  },
-  cardBody: {
-    padding: 16,
-    gap: 12,
-  },
+  cardCounter: { fontSize: 10, color: "#8A7D6A", letterSpacing: 1 },
+
+  cardBody: { padding: 16, gap: 12 },
+
   question: {
     fontSize: 15,
     fontWeight: "300",
@@ -185,6 +203,7 @@ const styles = StyleSheet.create({
     lineHeight: 24,
     marginBottom: 4,
   },
+
   hintBox: {
     backgroundColor: "#F4F3FC",
     borderWidth: 1,
@@ -194,36 +213,34 @@ const styles = StyleSheet.create({
   hintLabel: {
     fontSize: 9,
     letterSpacing: 2,
-    color: "#3D3580",
+    color: "#5548B0",
     opacity: 0.6,
     marginBottom: 4,
     fontWeight: "500",
   },
-  hintText: {
-    fontSize: 12,
-    color: "#3D3580",
-    lineHeight: 20,
-  },
+  hintText: { fontSize: 12, color: "#3D3580", lineHeight: 20 },
+
   answerBox: {
     backgroundColor: "#EAE8F5",
     borderWidth: 1.5,
-    borderColor: "#3D3580",
+    borderColor: "#5548B0",
     padding: 12,
   },
   answerLabel: {
     fontSize: 9,
     letterSpacing: 2,
-    color: "#3D3580",
+    color: "#5548B0",
     opacity: 0.6,
     marginBottom: 4,
     fontWeight: "500",
   },
   answerText: {
-    fontSize: 13,
+    fontSize: 14,
     color: "#3D3580",
     fontWeight: "600",
-    lineHeight: 20,
+    lineHeight: 22,
   },
+
   solutionBox: {
     backgroundColor: "#F4EFE4",
     borderWidth: 1.5,
@@ -238,23 +255,28 @@ const styles = StyleSheet.create({
     marginBottom: 6,
     fontWeight: "500",
   },
-  solutionText: {
-    fontSize: 12,
-    color: "#4A4035",
-    lineHeight: 20,
-  },
+  solutionText: { fontSize: 12, color: "#4A4035", lineHeight: 20 },
+
   controls: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
+    alignItems: "flex-end",
     marginTop: 4,
   },
+  controlsLeft: { gap: 6 },
   controlBtn: {
     fontSize: 10,
     letterSpacing: 1.5,
-    color: "#3D3580",
+    color: "#5548B0",
     textDecorationLine: "underline",
     fontWeight: "500",
+  },
+  skipBtn: { marginTop: 2 },
+  skipBtnText: {
+    fontSize: 10,
+    letterSpacing: 1,
+    color: "#8A7D6A",
+    textDecorationLine: "underline",
   },
   controlBtnMuted: {
     fontSize: 10,
@@ -262,26 +284,17 @@ const styles = StyleSheet.create({
     color: "#8A7D6A",
     textDecorationLine: "underline",
   },
-  dots: {
-    flexDirection: "row",
-    gap: 6,
-    alignItems: "center",
-  },
+
+  dots: { flexDirection: "row", gap: 6, alignItems: "center" },
   dot: {
     width: 8,
     height: 8,
     borderRadius: 4,
     borderWidth: 1.5,
-    borderColor: "#3D3580",
+    borderColor: "#5548B0",
     backgroundColor: "transparent",
   },
-  dotActive: {
-    backgroundColor: "#3D3580",
-  },
-  dotAnswer: {
-    borderColor: "#5548B0",
-  },
-  dotAnswerActive: {
-    backgroundColor: "#5548B0",
-  },
+  dotActive: { backgroundColor: "#5548B0" },
+  dotAnswer: { borderColor: "#5548B0" },
+  dotAnswerActive: { backgroundColor: "#5548B0" },
 });

@@ -506,7 +506,7 @@ const HeroSection = () => {
       {/* ── HOW IT WORKS ── */}
       <section
         id="how-it-works"
-        className="w-full border-b-[1.5px] border-[#1A1612]"
+        className="w-full border-[#1A1612]"
         style={{ padding: "88px 56px" }}
       >
         <div className="flex items-baseline gap-6 mb-16">

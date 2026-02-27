@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import * as ImagePicker from "expo-image-picker";
+import * as Haptics from "expo-haptics";
 import axios from "axios";
 import { useGetChatGPTResponseMutation } from "../api/chatgptApi";
 import { useGetAuthUserQuery } from "../api/authApi";
@@ -38,7 +39,6 @@ export default function SolveScreen() {
 
   const isLoading = ocrLoading || chatLoading;
 
-  // ── Pick from camera ─────────────────────────────────────
   const handleCamera = async () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== "granted") {
@@ -53,12 +53,12 @@ export default function SolveScreen() {
       quality: 0.9,
     });
     if (!result.canceled) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       setImageUri(result.assets[0].uri);
       setSolution(null);
     }
   };
 
-  // ── Pick from library ────────────────────────────────────
   const handleGallery = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== "granted") {
@@ -70,19 +70,19 @@ export default function SolveScreen() {
       quality: 0.9,
     });
     if (!result.canceled) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       setImageUri(result.assets[0].uri);
       setSolution(null);
     }
   };
 
-  // ── Main solve flow ──────────────────────────────────────
   const handleSolve = async () => {
     if (!imageUri) return;
     setSolution(null);
     setOcrLoading(true);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
     try {
-      // 1. Send image to backend (Google Vision OCR)
       const formData = new FormData();
       formData.append("image", {
         uri: imageUri,
@@ -95,7 +95,6 @@ export default function SolveScreen() {
       });
 
       const extractedText = ocrRes.data?.ParsedResults?.[0]?.ParsedText ?? "";
-
       setOcrLoading(false);
 
       if (!extractedText.trim()) {
@@ -103,16 +102,14 @@ export default function SolveScreen() {
         return;
       }
 
-      // 2. Send to GPT
       const chatData = await getChatGPTResponse({
         text: extractedText,
       }).unwrap();
       setSolution(chatData);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
-      // 3. Store if logged in
       if (authUser) {
         await storeSolved({
-          userId: authUser.userId,
           file_name: "homework.jpg",
           question: chatData.question,
           hints: chatData.hints,
@@ -122,70 +119,69 @@ export default function SolveScreen() {
       }
     } catch (err) {
       setOcrLoading(false);
-      console.error(err);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       Alert.alert("Error", "Something went wrong. Please try again.");
     }
   };
 
   const handleReset = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setImageUri(null);
     setSolution(null);
   };
 
   return (
-    <SafeAreaView style={styles.root}>
+    <SafeAreaView style={styles.root} edges={["bottom"]}>
       <ScrollView
         contentContainerStyle={styles.scroll}
         keyboardShouldPersistTaps="handled"
       >
-        {/* Page header */}
         <View style={styles.pageHeader}>
           <View style={styles.rule} />
-          <Text style={styles.eyebrow}>HOMEWORK SOLVER</Text>
+          <Text style={styles.eyebrow}>SOLVE</Text>
         </View>
         <Text style={styles.title}>
           Upload it.{"\n"}
           <Text style={styles.titleAccent}>Understand it.</Text>
         </Text>
         <Text style={styles.subtitle}>
-          Take a photo or upload an image of any problem to get step-by-step
-          hints and a full solution.
+          Scan any problem for step-by-step hints and a full solution.
         </Text>
 
-        {/* Image area */}
         {!imageUri ? (
           <View style={styles.uploadZone}>
             <Text style={styles.uploadArrow}>↑</Text>
             <Text style={styles.uploadText}>SCAN OR UPLOAD A PROBLEM</Text>
-            <View style={styles.uploadButtons}>
+            <View style={styles.btnPair}>
               <TouchableOpacity
-                style={styles.uploadBtn}
+                style={styles.btn}
                 onPress={handleCamera}
                 activeOpacity={0.8}
               >
-                <Text style={styles.uploadBtnText}>📷 CAMERA</Text>
+                <Text style={styles.btnText}>CAMERA</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.uploadBtn, styles.uploadBtnSecondary]}
+                style={[styles.btn, styles.btnGhost]}
                 onPress={handleGallery}
                 activeOpacity={0.8}
               >
-                <Text
-                  style={[styles.uploadBtnText, styles.uploadBtnTextSecondary]}
-                >
-                  🖼 GALLERY
+                <Text style={[styles.btnText, styles.btnGhostText]}>
+                  GALLERY
                 </Text>
               </TouchableOpacity>
             </View>
           </View>
         ) : (
-          <View style={styles.imageContainer}>
+          <View style={styles.imageBlock}>
+            <View style={styles.scannedBadge}>
+              <Text style={styles.scannedCheck}>✓</Text>
+              <Text style={styles.scannedLabel}>SCANNED · homework.jpg</Text>
+            </View>
             <Image
               source={{ uri: imageUri }}
               style={styles.preview}
               resizeMode="contain"
             />
-
             <View style={styles.actionRow}>
               <TouchableOpacity
                 style={[styles.solveBtn, isLoading && styles.btnDisabled]}
@@ -216,7 +212,6 @@ export default function SolveScreen() {
           </View>
         )}
 
-        {/* Solution card */}
         {solution && (
           <ProblemCard
             problem={solution}
@@ -231,51 +226,39 @@ export default function SolveScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: "#F4EFE4",
-  },
-  scroll: {
-    paddingHorizontal: 24,
-    paddingTop: 24,
-    paddingBottom: 48,
-    gap: 0,
-  },
+  root: { flex: 1, backgroundColor: "#F4EFE4" },
+  scroll: { paddingHorizontal: 24, paddingTop: 20, paddingBottom: 48 },
+
   pageHeader: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
-    marginBottom: 20,
+    gap: 10,
+    marginBottom: 12,
   },
-  rule: {
-    width: 28,
-    height: 1.5,
-    backgroundColor: "#3D3580",
-  },
+  rule: { width: 16, height: 1.5, backgroundColor: "#5548B0" },
   eyebrow: {
-    fontSize: 10,
+    fontSize: 8,
     letterSpacing: 3,
-    color: "#3D3580",
-    fontWeight: "500",
+    color: "#5548B0",
+    fontWeight: "600",
   },
+
   title: {
     fontSize: 40,
     fontWeight: "300",
     color: "#1A1612",
     lineHeight: 46,
     letterSpacing: -1,
-    marginBottom: 12,
+    marginBottom: 10,
   },
-  titleAccent: {
-    color: "#3D3580",
-    fontStyle: "italic",
-  },
+  titleAccent: { color: "#5548B0", fontStyle: "italic" },
   subtitle: {
     fontSize: 13,
     color: "#8A7D6A",
     lineHeight: 22,
     marginBottom: 32,
   },
+
   uploadZone: {
     borderWidth: 1.5,
     borderColor: "#CEC4AE",
@@ -287,45 +270,45 @@ const styles = StyleSheet.create({
     gap: 12,
     marginBottom: 24,
   },
-  uploadArrow: {
-    fontSize: 28,
-    color: "#CEC4AE",
-  },
+  uploadArrow: { fontSize: 28, color: "#CEC4AE" },
   uploadText: {
-    fontSize: 10,
+    fontSize: 9,
     letterSpacing: 2.5,
     color: "#8A7D6A",
     marginBottom: 8,
   },
-  uploadButtons: {
-    flexDirection: "row",
-    gap: 12,
-    marginTop: 8,
-  },
-  uploadBtn: {
-    backgroundColor: "#1A1612",
+
+  btnPair: { flexDirection: "row", gap: 10, marginTop: 4 },
+  btn: {
     paddingVertical: 12,
     paddingHorizontal: 20,
+    backgroundColor: "#1A1612",
     borderWidth: 1.5,
     borderColor: "#1A1612",
   },
-  uploadBtnSecondary: {
-    backgroundColor: "transparent",
-    borderColor: "#1A1612",
-  },
-  uploadBtnText: {
-    color: "#F4EFE4",
+  btnGhost: { backgroundColor: "transparent", borderColor: "#1A1612" },
+  btnText: {
     fontSize: 10,
     letterSpacing: 1.5,
-    fontWeight: "500",
+    color: "#F4EFE4",
+    fontWeight: "600",
   },
-  uploadBtnTextSecondary: {
-    color: "#1A1612",
+  btnGhostText: { color: "#1A1612" },
+
+  imageBlock: { gap: 10, marginBottom: 24 },
+  scannedBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: "#FEFAF2",
+    borderWidth: 1,
+    borderColor: "#D6CEBC",
+    paddingHorizontal: 12,
+    paddingVertical: 7,
   },
-  imageContainer: {
-    gap: 12,
-    marginBottom: 24,
-  },
+  scannedCheck: { fontSize: 10, color: "#5548B0" },
+  scannedLabel: { fontSize: 8, letterSpacing: 1.5, color: "#8A7D6A" },
+
   preview: {
     width: "100%",
     height: 240,
@@ -333,9 +316,7 @@ const styles = StyleSheet.create({
     borderColor: "#CEC4AE",
     backgroundColor: "#FEFAF2",
   },
-  actionRow: {
-    flexDirection: "row",
-  },
+  actionRow: { flexDirection: "row" },
   solveBtn: {
     flex: 1,
     backgroundColor: "#1A1612",
@@ -344,14 +325,12 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: "#1A1612",
   },
-  btnDisabled: {
-    opacity: 0.5,
-  },
+  btnDisabled: { opacity: 0.5 },
   solveBtnText: {
     color: "#F4EFE4",
     fontSize: 11,
     letterSpacing: 2.5,
-    fontWeight: "500",
+    fontWeight: "600",
   },
   resetBtn: {
     flex: 1,

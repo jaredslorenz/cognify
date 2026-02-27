@@ -101,31 +101,6 @@ const UserDropdown: React.FC = () => {
                 Account
               </span>
 
-              {/* <Link
-                href="/dashboard"
-                onClick={() => setIsOpen(false)}
-                className="flex items-center gap-3 px-3 py-2.5 text-[12px] tracking-wide text-[#4A4035] border-[1.5px] border-transparent hover:text-[#3D3580] hover:bg-[#EAE8F5] hover:border-[#C5C0E8] transition-all"
-                style={{ textDecoration: "none" }}
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="15"
-                  height="15"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  style={{ color: "#8A7D6A" }}
-                >
-                  <rect x="3" y="3" width="7" height="7" />
-                  <rect x="14" y="3" width="7" height="7" />
-                  <rect x="14" y="14" width="7" height="7" />
-                  <rect x="3" y="14" width="7" height="7" />
-                </svg>
-                Dashboard
-              </Link> */}
-
               <button
                 onClick={handleLogout}
                 className="flex items-center gap-3 px-3 py-2.5 text-[12px] tracking-wide text-[#4A4035] hover:text-[#3D3580] hover:bg-[#EAE8F5] border-[1.5px] border-transparent hover:border-[#C5C0E8] transition-all cursor-pointer w-full text-left"
