@@ -16,6 +16,7 @@ import axios from "axios";
 import { useGetChatGPTResponseMutation } from "../api/chatgptApi";
 import { useGetAuthUserQuery } from "../api/authApi";
 import { useStoreSolvedMutation } from "../api/uploadsApi";
+import { getAuthToken } from "../utils/getAuthToken";
 import ProblemCard from "../components/ProblemCard";
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
@@ -83,6 +84,13 @@ export default function SolveScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
     try {
+      // Attach auth token to OCR call
+      const token = await getAuthToken();
+      const authHeaders: Record<string, string> = {
+        "Content-Type": "multipart/form-data",
+      };
+      if (token) authHeaders["Authorization"] = `Bearer ${token}`;
+
       const formData = new FormData();
       formData.append("image", {
         uri: imageUri,
@@ -91,7 +99,7 @@ export default function SolveScreen() {
       } as any);
 
       const ocrRes = await axios.post(`${API_URL}ocr`, formData, {
-        headers: { "Content-Type": "multipart/form-data" },
+        headers: authHeaders,
       });
 
       const extractedText = ocrRes.data?.ParsedResults?.[0]?.ParsedText ?? "";
@@ -117,10 +125,14 @@ export default function SolveScreen() {
           full_solution: chatData.fullSolution ?? "",
         });
       }
-    } catch (err) {
+    } catch (err: any) {
       setOcrLoading(false);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      Alert.alert("Error", "Something went wrong. Please try again.");
+      // Surface the real error — axios wraps server responses in err.response.data
+      const message = err?.response?.data
+        ? JSON.stringify(err.response.data)
+        : (err?.message ?? "Unknown error");
+      Alert.alert("Error", message);
     }
   };
 

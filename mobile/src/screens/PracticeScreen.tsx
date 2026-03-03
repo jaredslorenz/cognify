@@ -18,11 +18,23 @@ import axios from "axios";
 import { useGetChatGPTProblemsMutation } from "../api/chatgptApi";
 import { useGetAuthUserQuery } from "../api/authApi";
 import { useStorePracticeMutation } from "../api/uploadsApi";
+import { getAuthToken } from "../utils/getAuthToken";
 import ProblemCard from "../components/ProblemCard";
 import { PracticeResponse } from "./SolveScreen";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
-const CARD_WIDTH = SCREEN_WIDTH - 48; // full width minus padding
+
+// Layout math:
+// Total usable width = screen - left/right padding (24*2 = 48)
+// Two groups side by side with a gap of 16 between them
+// Each group width = (usable - gap) / 2
+const H_PAD = 48;
+const GROUP_GAP = 16;
+const GROUP_W = (SCREEN_WIDTH - H_PAD - GROUP_GAP) / 2;
+
+// Segment width = (group width - gaps between segments) / number of segments
+const DIFF_SEG_W = (GROUP_W - 4 * 2) / 3; // 3 segments, 2 gaps of 4
+const AMT_SEG_W = (GROUP_W - 4 * 4) / 5; // 5 segments, 4 gaps of 4
 
 const SUBJECTS = [
   "Calculus",
@@ -96,6 +108,12 @@ export default function PracticeScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
     try {
+      const token = await getAuthToken();
+      const authHeaders: Record<string, string> = {
+        "Content-Type": "multipart/form-data",
+      };
+      if (token) authHeaders["Authorization"] = `Bearer ${token}`;
+
       const formData = new FormData();
       formData.append("image", {
         uri: imageUri,
@@ -106,11 +124,8 @@ export default function PracticeScreen() {
       const ocrRes = await axios.post(
         `${process.env.EXPO_PUBLIC_API_URL}ocr`,
         formData,
-        {
-          headers: { "Content-Type": "multipart/form-data" },
-        },
+        { headers: authHeaders },
       );
-
       const extractedText = ocrRes.data?.ParsedResults?.[0]?.ParsedText ?? "";
       setOcrLoading(false);
 
@@ -139,7 +154,6 @@ export default function PracticeScreen() {
       setProblems(final);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
-      // userId removed — server extracts from JWT
       if (authUser) {
         await storePractice({
           problems: final.map((p) => ({
@@ -151,10 +165,13 @@ export default function PracticeScreen() {
           difficulty,
         });
       }
-    } catch (err) {
+    } catch (err: any) {
       setOcrLoading(false);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      Alert.alert("Error", "Something went wrong. Please try again.");
+      const message = err?.response?.data
+        ? JSON.stringify(err.response.data)
+        : (err?.message ?? "Unknown error");
+      Alert.alert("Error", message);
     }
   };
 
@@ -162,7 +179,6 @@ export default function PracticeScreen() {
   if (problems.length > 0) {
     return (
       <SafeAreaView style={styles.root} edges={["bottom"]}>
-        {/* Progress track */}
         <View style={styles.progressWrap}>
           <View style={styles.progressTrack}>
             <View
@@ -212,7 +228,6 @@ export default function PracticeScreen() {
           )}
         />
 
-        {/* Page bars */}
         <View style={styles.pageBars}>
           {problems.map((_, i) => (
             <TouchableOpacity
@@ -236,7 +251,6 @@ export default function PracticeScreen() {
           ))}
         </View>
 
-        {/* Back to setup */}
         <TouchableOpacity
           style={styles.backBtn}
           onPress={() => {
@@ -270,7 +284,6 @@ export default function PracticeScreen() {
           Upload notes to generate practice problems with hints and solutions.
         </Text>
 
-        {/* Subject */}
         <Text style={styles.selLabel}>
           SUBJECT <Text style={styles.optional}>(OPTIONAL)</Text>
         </Text>
@@ -297,18 +310,18 @@ export default function PracticeScreen() {
           ))}
         </View>
 
-        {/* Difficulty + Amount */}
         <View style={styles.selRow}>
-          <View style={styles.selGroup}>
+          {/* DIFFICULTY — 3 segments */}
+          <View>
             <Text style={styles.selLabel}>DIFFICULTY</Text>
-            <View style={styles.segmented}>
-              {DIFFICULTIES.map((d, i) => (
+            <View style={styles.segRow}>
+              {DIFFICULTIES.map((d) => (
                 <TouchableOpacity
                   key={d}
                   style={[
                     styles.seg,
+                    { width: DIFF_SEG_W },
                     difficulty === d && styles.segActive,
-                    i < DIFFICULTIES.length - 1 && styles.segBorderR,
                   ]}
                   onPress={() => {
                     Haptics.selectionAsync();
@@ -328,16 +341,18 @@ export default function PracticeScreen() {
               ))}
             </View>
           </View>
-          <View style={styles.selGroup}>
+
+          {/* AMOUNT — 5 segments */}
+          <View>
             <Text style={styles.selLabel}>AMOUNT</Text>
-            <View style={styles.segmented}>
-              {AMOUNTS.map((n, i) => (
+            <View style={styles.segRow}>
+              {AMOUNTS.map((n) => (
                 <TouchableOpacity
                   key={n}
                   style={[
                     styles.seg,
+                    { width: AMT_SEG_W },
                     amount === n && styles.segActive,
-                    i < AMOUNTS.length - 1 && styles.segBorderR,
                   ]}
                   onPress={() => {
                     Haptics.selectionAsync();
@@ -359,7 +374,6 @@ export default function PracticeScreen() {
           </View>
         </View>
 
-        {/* Upload zone */}
         {!imageUri ? (
           <View style={styles.uploadZone}>
             <Text style={styles.uploadArrow}>↑</Text>
@@ -464,6 +478,7 @@ const styles = StyleSheet.create({
     marginBottom: 9,
   },
   optional: { color: "#8A7D6A" },
+
   chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 7, marginBottom: 22 },
   chip: {
     paddingHorizontal: 11,
@@ -480,21 +495,22 @@ const styles = StyleSheet.create({
   },
   chipTextActive: { color: "#5548B0" },
 
-  selRow: { flexDirection: "row", gap: 20, marginBottom: 24 },
-  selGroup: { flex: 1 },
-  segmented: { flexDirection: "row" },
+  selRow: { flexDirection: "row", gap: GROUP_GAP, marginBottom: 24 },
+
+  segRow: { flexDirection: "row", gap: 4 },
   seg: {
-    flex: 1,
-    paddingVertical: 8,
+    paddingVertical: 6,
     alignItems: "center",
     borderWidth: 1,
     borderColor: "#CEC4AE",
   },
-  segActive: { borderColor: "#5548B0", backgroundColor: "#EEEDF8" },
-  segBorderR: { borderRightWidth: 0 },
+  segActive: {
+    borderColor: "#5548B0",
+    backgroundColor: "#EEEDF8",
+  },
   segText: {
     fontSize: 8,
-    letterSpacing: 1.5,
+    letterSpacing: 1,
     color: "#8A7D6A",
     fontWeight: "500",
   },
@@ -570,7 +586,6 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
 
-  // Swiper
   progressWrap: {
     flexDirection: "row",
     alignItems: "center",

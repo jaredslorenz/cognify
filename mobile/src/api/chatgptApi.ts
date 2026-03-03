@@ -1,4 +1,5 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import { getAuthToken } from "../utils/getAuthToken";
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
@@ -15,7 +16,16 @@ export interface PracticeProblemsResponse {
 
 export const chatgptApi = createApi({
   reducerPath: "chatgptApi",
-  baseQuery: fetchBaseQuery({ baseUrl: API_URL }),
+  baseQuery: fetchBaseQuery({
+    baseUrl: API_URL,
+    prepareHeaders: async (headers) => {
+      const token = await getAuthToken();
+      if (token) {
+        headers.set("Authorization", `Bearer ${token}`);
+      }
+      return headers;
+    },
+  }),
   endpoints: (builder) => ({
     getChatGPTResponse: builder.mutation<PracticeResponse, { text: string }>({
       query: (body) => ({
