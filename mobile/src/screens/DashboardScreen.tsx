@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   Animated,
   Modal,
+  Alert,
   SafeAreaView as RNSafeAreaView,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -18,6 +19,7 @@ import {
   useGetUserStatsQuery,
   useGetSolvedProblemsQuery,
   useGetPracticeProblemsQuery,
+  useDeleteProblemMutation,
   SolvedProblem,
   PracticeProblem,
 } from "../api/uploadsApi";
@@ -68,14 +70,20 @@ function FadeIn({
 interface ModalItem {
   problem: PracticeResponse;
   label: string;
+  id: number;
+  type: "solved" | "practice";
 }
 
 function ProblemModal({
   item,
   onClose,
+  onDelete,
+  isDeleting,
 }: {
   item: ModalItem;
   onClose: () => void;
+  onDelete: () => void;
+  isDeleting: boolean;
 }) {
   return (
     <Modal
@@ -84,7 +92,6 @@ function ProblemModal({
       onRequestClose={onClose}
     >
       <RNSafeAreaView style={styles.modalRoot}>
-        {/* Header */}
         <View style={styles.modalHeader}>
           <View style={styles.modalEyebrow}>
             <View style={styles.modalRule} />
@@ -105,6 +112,17 @@ function ProblemModal({
             index={0}
             total={1}
           />
+
+          <TouchableOpacity
+            style={[styles.deleteBtn, isDeleting && styles.deleteBtnDisabled]}
+            onPress={onDelete}
+            disabled={isDeleting}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.deleteBtnText}>
+              {isDeleting ? "DELETING..." : "DELETE →"}
+            </Text>
+          </TouchableOpacity>
         </ScrollView>
       </RNSafeAreaView>
     </Modal>
@@ -292,7 +310,7 @@ export default function DashboardScreen() {
   );
   const { data: practiced, isLoading: practicedLoading } =
     useGetPracticeProblemsQuery(undefined, { skip: !user });
-
+  const [deleteProblem, { isLoading: isDeleting }] = useDeleteProblemMutation();
   const [modalItem, setModalItem] = useState<ModalItem | null>(null);
 
   if (!user) return <GuestView />;
@@ -309,6 +327,8 @@ export default function DashboardScreen() {
   const openSolved = (item: SolvedProblem) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setModalItem({
+      id: item.id,
+      type: "solved",
       label: "SOLVED PROBLEM",
       problem: {
         question: item.question,
@@ -322,6 +342,8 @@ export default function DashboardScreen() {
   const openPractice = (item: PracticeProblem) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setModalItem({
+      id: item.id,
+      type: "practice",
       label: "PRACTICE PROBLEM",
       problem: {
         question: item.question,
@@ -331,13 +353,36 @@ export default function DashboardScreen() {
     });
   };
 
+  const handleDelete = () => {
+    if (!modalItem) return;
+    Alert.alert("Delete problem", "This can't be undone.", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+            await deleteProblem({
+              id: modalItem.id,
+              type: modalItem.type,
+            }).unwrap();
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            setModalItem(null);
+          } catch {
+            Alert.alert("Error", "Failed to delete. Please try again.");
+          }
+        },
+      },
+    ]);
+  };
+
   return (
     <SafeAreaView style={styles.root} edges={["bottom"]}>
       <ScrollView
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
       >
-        {/* Profile header */}
         <FadeIn>
           <View style={styles.profileRow}>
             <View style={styles.avatar}>
@@ -352,7 +397,6 @@ export default function DashboardScreen() {
           </View>
         </FadeIn>
 
-        {/* Stats row */}
         <FadeIn delay={60}>
           {statsLoading ? (
             <View style={styles.statsRow}>
@@ -390,7 +434,6 @@ export default function DashboardScreen() {
           )}
         </FadeIn>
 
-        {/* Solved row */}
         <FadeIn delay={120}>
           <SectionHeader title="Recently" accent="solved" />
           {solvedLoading ? (
@@ -413,7 +456,6 @@ export default function DashboardScreen() {
           )}
         </FadeIn>
 
-        {/* Practice row */}
         <FadeIn delay={180}>
           <SectionHeader title="Recent" accent="practice" />
           {practicedLoading ? (
@@ -437,7 +479,6 @@ export default function DashboardScreen() {
         </FadeIn>
       </ScrollView>
 
-      {/* Problem viewer modal */}
       {modalItem && (
         <ProblemModal
           item={modalItem}
@@ -445,6 +486,8 @@ export default function DashboardScreen() {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             setModalItem(null);
           }}
+          onDelete={handleDelete}
+          isDeleting={isDeleting}
         />
       )}
     </SafeAreaView>
@@ -471,7 +514,6 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
 
-  // Profile
   profileRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -506,7 +548,6 @@ const styles = StyleSheet.create({
     marginTop: 1,
   },
 
-  // Stats — slightly larger
   statsRow: {
     flexDirection: "row",
     borderWidth: 1,
@@ -529,7 +570,7 @@ const styles = StyleSheet.create({
   },
   statUnderlineStreak: { backgroundColor: "#B87333" },
   statNum: {
-    fontSize: 24, // up from 18
+    fontSize: 24,
     fontWeight: "600",
     color: "#1A1612",
     letterSpacing: -0.5,
@@ -546,7 +587,6 @@ const styles = StyleSheet.create({
   },
   statLblStreak: { color: "#B87333", opacity: 0.8 },
 
-  // Section header
   secHdr: {
     flexDirection: "row",
     alignItems: "center",
@@ -562,10 +602,8 @@ const styles = StyleSheet.create({
   secHdrAccent: { color: "#5548B0", fontStyle: "italic" },
   secHdrRule: { flex: 1, height: 1, backgroundColor: "#D6CEBC" },
 
-  // Horizontal list
   hlist: { paddingRight: 24, gap: 10, marginBottom: 28 },
 
-  // Cards
   hcard: {
     width: CARD_WIDTH,
     backgroundColor: "#FEFAF2",
@@ -621,7 +659,6 @@ const styles = StyleSheet.create({
     textDecorationLine: "underline",
   },
 
-  // Empty
   emptyRow: {
     borderWidth: 1,
     borderColor: "#D6CEBC",
@@ -632,7 +669,6 @@ const styles = StyleSheet.create({
   },
   emptyText: { fontSize: 12, color: "#8A7D6A" },
 
-  // Modal
   modalRoot: { flex: 1, backgroundColor: "#F4EFE4" },
   modalHeader: {
     flexDirection: "row",
@@ -654,7 +690,21 @@ const styles = StyleSheet.create({
   modalClose: { fontSize: 16, color: "#8A7D6A", fontWeight: "300" },
   modalScroll: { paddingHorizontal: 24, paddingTop: 16, paddingBottom: 48 },
 
-  // Guest
+  deleteBtn: {
+    marginTop: 16,
+    borderWidth: 1,
+    borderColor: "#C0392B",
+    paddingVertical: 14,
+    alignItems: "center",
+  },
+  deleteBtnDisabled: { opacity: 0.5 },
+  deleteBtnText: {
+    fontSize: 10,
+    letterSpacing: 2.5,
+    color: "#C0392B",
+    fontWeight: "600",
+  },
+
   guestTitle: {
     fontSize: 36,
     fontWeight: "300",

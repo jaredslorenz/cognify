@@ -46,7 +46,6 @@ export const uploadsApi = createApi({
   }),
   tagTypes: ["Solved", "Practice", "Stats"],
   endpoints: (builder) => ({
-    // userId removed from all — server extracts from verified JWT
     getSolvedProblems: builder.query<SolvedProblem[], void>({
       query: () => `uploads/solved`,
       providesTags: ["Solved"],
@@ -97,6 +96,18 @@ export const uploadsApi = createApi({
       }),
       invalidatesTags: ["Practice", "Stats"],
     }),
+
+    deleteProblem: builder.mutation<
+      { deleted: string },
+      { id: number; type: "solved" | "practice" }
+    >({
+      query: (body) => ({
+        url: "uploads",
+        method: "DELETE",
+        body,
+      }),
+      invalidatesTags: ["Solved", "Practice", "Stats"],
+    }),
   }),
 });
 
@@ -106,4 +117,5 @@ export const {
   useGetUserStatsQuery,
   useStoreSolvedMutation,
   useStorePracticeMutation,
+  useDeleteProblemMutation,
 } = uploadsApi;

@@ -1,12 +1,7 @@
 "use client";
 
 import React, { useEffect } from "react";
-import {
-  Authenticator,
-  Heading,
-  View,
-  useAuthenticator,
-} from "@aws-amplify/ui-react";
+import { Authenticator, View, useAuthenticator } from "@aws-amplify/ui-react";
 import "@aws-amplify/ui-react/styles.css";
 import { useRouter, usePathname } from "next/navigation";
 
@@ -46,12 +41,19 @@ const components = {
     Footer() {
       const { toSignUp } = useAuthenticator();
       return (
-        <View className="text-center mt-4">
-          <p className="text-black">
+        <View style={{ textAlign: "center", marginTop: "8px" }}>
+          <p style={{ color: "#1A1612", fontSize: "14px" }}>
             Don&apos;t have an account?{" "}
             <button
               onClick={toSignUp}
-              className="text-primary hover:underline bg-transparent border-none p-0 cursor-pointer"
+              style={{
+                color: "#3D3580",
+                background: "none",
+                border: "none",
+                padding: 0,
+                cursor: "pointer",
+                textDecoration: "underline",
+              }}
             >
               Sign up here
             </button>
@@ -65,12 +67,19 @@ const components = {
     Footer() {
       const { toSignIn } = useAuthenticator();
       return (
-        <View className="text-center mt-4">
-          <p className="text-black">
+        <View style={{ textAlign: "center", marginTop: "8px" }}>
+          <p style={{ color: "#1A1612", fontSize: "14px" }}>
             Already have an account?{" "}
             <button
               onClick={toSignIn}
-              className="text-primary hover:underline bg-transparent border-none p-0 cursor-pointer"
+              style={{
+                color: "#3D3580",
+                background: "none",
+                border: "none",
+                padding: 0,
+                cursor: "pointer",
+                textDecoration: "underline",
+              }}
             >
               Sign in
             </button>
@@ -120,14 +129,13 @@ const formFields = {
 const Auth = ({ children }: { children?: React.ReactNode }) => {
   const router = useRouter();
   const pathname = usePathname();
-  const { user } = useAuthenticator((ctx) => [ctx.user]); // top-level hook
+  const { user } = useAuthenticator((ctx) => [ctx.user]);
 
   const isAuthPage = pathname.match(/^\/(signin|signup)$/);
 
-  // Redirect logged-in users away from auth pages
   useEffect(() => {
     if (user && isAuthPage) {
-      router.push("/"); // change redirect as needed
+      router.push("/");
     }
   }, [user, isAuthPage, router]);
 
@@ -136,22 +144,37 @@ const Auth = ({ children }: { children?: React.ReactNode }) => {
   }
 
   return (
-    <>
-      {isAuthPage ? (
-        <div className="min-h-screen bg-[#F4EFE4] flex justify-center items-center px-4 py-8">
-          <div className="w-full max-w-xl">
-            <Authenticator
-              initialState={pathname.includes("signup") ? "signUp" : "signIn"}
-              components={components}
-              formFields={formFields}
-              className="border-none"
-            />
-          </div>
+    <div className="min-h-screen bg-[#F4EFE4] flex justify-center items-center px-4 py-8">
+      <div className="w-full max-w-xl">
+        <Authenticator
+          initialState={pathname.includes("signup") ? "signUp" : "signIn"}
+          components={components}
+          formFields={formFields}
+          className="border-none"
+        />
+
+        {/* Continue without account */}
+        <div style={{ textAlign: "center", marginTop: "20px" }}>
+          <button
+            onClick={() => router.push("/")}
+            style={{
+              fontFamily: "'DM Mono', monospace",
+              fontSize: "11px",
+              letterSpacing: "0.1em",
+              textTransform: "uppercase",
+              color: "#8A7D6A",
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              textDecoration: "underline",
+              padding: 0,
+            }}
+          >
+            Continue without an account →
+          </button>
         </div>
-      ) : (
-        children
-      )}
-    </>
+      </div>
+    </div>
   );
 };
 
