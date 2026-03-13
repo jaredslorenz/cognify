@@ -1,7 +1,21 @@
+# dependencies
 node_modules/
 
-.env
+# env files
+.env*
 
-.DS_store
+# OS files
+.DS_Store
 
+# uploads
 uploads/
+
+# logs
+*.log
+
+# coverage
+coverage/
+
+# build output
+dist/
+build/
