@@ -7,7 +7,9 @@ export const aiLimiter = rateLimit({
   legacyHeaders: false,
 
   keyGenerator: (req: any) =>
-    req.headers["x-test-key"] || req.userId || ipKeyGenerator(req),
+    (process.env.NODE_ENV !== "production" && req.headers["x-test-key"]) ||
+    req.userId ||
+    ipKeyGenerator(req),
 
   message: {
     error: "Too many requests. Please wait a moment before trying again.",

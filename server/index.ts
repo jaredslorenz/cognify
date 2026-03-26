@@ -1,6 +1,7 @@
 import express from "express";
 import pool from "./src/db";
 import cors from "cors";
+import helmet from "helmet";
 import dotenv from "dotenv";
 import ocrRoutes from "./src/routes/ocrRoutes";
 import chatgptRoutes from "./src/routes/chatgptRoutes";
@@ -13,9 +14,13 @@ const app = express();
 
 app.set("trust proxy", 1);
 
+app.use(helmet());
+
 app.use(
   cors({
-    origin: ["http://localhost:3000", "https://cognify-phi.vercel.app"],
+    origin: process.env.NODE_ENV === "production"
+      ? ["https://cognify-phi.vercel.app"]
+      : ["http://localhost:3000", "https://cognify-phi.vercel.app"],
     credentials: true,
   }),
 );

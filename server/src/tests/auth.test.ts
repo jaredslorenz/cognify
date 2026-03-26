@@ -103,7 +103,7 @@ describe("rate limiter", () => {
     for (let i = 0; i < 20; i++) {
       const res = await request(app)
         .post("/api/openai/solve")
-        .set("x-test-key", "ratelimit-test") // ← THIS
+        .set("x-test-key", "ratelimit-test")
         .send({ text: "test" });
 
       statuses.push(res.status);

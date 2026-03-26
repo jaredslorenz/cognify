@@ -212,7 +212,11 @@ export const deleteProblem = async (req: AuthRequest, res: Response) => {
       return res.status(400).json({ error: "Missing required fields" });
     }
 
-    const table = type === "solved" ? "solved_problems" : "practice_problems";
+    const ALLOWED_TABLES = { solved: "solved_problems", practice: "practice_problems" } as const;
+    const table = ALLOWED_TABLES[type as keyof typeof ALLOWED_TABLES];
+    if (!table) {
+      return res.status(400).json({ error: "Invalid type" });
+    }
 
     const result = await pool.query(
       `DELETE FROM ${table} WHERE id = $1 AND user_id = $2 RETURNING id;`,
